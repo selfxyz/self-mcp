@@ -584,3 +584,8 @@ If the issue persists, please check:
 """
     
     return response
+
+
+# Run the server when executed directly
+if __name__ == "__main__":
+    mcp.run()
