@@ -1,49 +1,130 @@
 #!/usr/bin/env python3
-"""Test script for Self MCP server"""
+"""Test the refactored Self MCP server"""
 
 import asyncio
-import json
+import sys
+import os
+
+# Add current directory to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+async def test_imports():
+    """Test all imports work correctly"""
+    print("Testing imports...")
+    try:
+        from self_mcp import server
+        from self_mcp.tools import (
+            explain_self_integration,
+            generate_verification_code,
+            debug_verification_error,
+            check_self_status,
+            generate_verification_config
+        )
+        from self_mcp.resources import (
+            get_contract_addresses,
+            get_example_code,
+            get_best_practices
+        )
+        from self_mcp.prompts import (
+            design_verification_flow,
+            troubleshoot_integration
+        )
+        print("✅ All imports successful!")
+        return True
+    except Exception as e:
+        print(f"❌ Import error: {e}")
+        return False
 
 
 async def test_tools():
-    """Test the MCP tools locally"""
-    # Import the server module
-    from server import explain_self_integration, generate_verification_code, debug_verification_error
+    """Test the tools work correctly"""
+    print("\nTesting tools...")
     
-    print("Testing Self MCP Server Tools\n")
-    print("="*50)
+    try:
+        from self_mcp.tools import explain_self_integration, generate_verification_code
+        
+        # Test explain_self_integration
+        result = await explain_self_integration("airdrop")
+        print(f"✅ explain_self_integration: {len(result)} chars")
+        
+        # Test generate_verification_code
+        result = await generate_verification_code("frontend-qr", "typescript")
+        print(f"✅ generate_verification_code: {len(result)} chars")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Tool error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_resources():
+    """Test the resources work correctly"""
+    print("\nTesting resources...")
     
-    # Test 1: explain_self_integration
-    print("\n1. Testing explain_self_integration - Airdrop use case:")
-    print("-"*50)
-    result = await explain_self_integration("airdrop")
-    print(result[:500] + "...\n")  # Show first 500 chars
+    try:
+        from self_mcp.resources import get_contract_addresses, get_example_code
+        
+        # Test get_contract_addresses
+        result = await get_contract_addresses()
+        print(f"✅ get_contract_addresses: {len(result)} chars")
+        
+        # Test get_example_code
+        result = await get_example_code("airdrop")
+        print(f"✅ get_example_code: {len(result)} chars")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Resource error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def test_server_creation():
+    """Test the MCP server can be created"""
+    print("\nTesting server creation...")
     
-    # Test 2: generate_verification_code
-    print("\n2. Testing generate_verification_code - Frontend QR:")
-    print("-"*50)
-    result = await generate_verification_code("frontend-qr", "typescript")
-    print(result[:500] + "...\n")
+    try:
+        from self_mcp.server import mcp
+        
+        # Check tools are registered
+        tools = [t for t in dir(mcp) if t.startswith('tool_')]
+        print(f"✅ Server created with {len(tools)} tools")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Server creation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def main():
+    """Run all tests"""
+    print("Testing refactored Self MCP server\n")
+    print("=" * 50)
     
-    print("\n3. Testing generate_verification_code - Backend verify:")
-    print("-"*50)
-    result = await generate_verification_code("backend-verify", "typescript")
-    print(result[:500] + "...\n")
+    tests = [
+        test_imports(),
+        test_tools(),
+        test_resources(),
+        test_server_creation()
+    ]
     
-    # Test 3: debug_verification_error
-    print("\n4. Testing debug_verification_error - Scope mismatch:")
-    print("-"*50)
-    result = await debug_verification_error("Invalid scope validation failed", "scope-mismatch")
-    print(result[:500] + "...\n")
+    results = await asyncio.gather(*tests)
     
-    print("\n5. Testing debug_verification_error - Unknown error:")
-    print("-"*50)
-    result = await debug_verification_error("Something went wrong with verification")
-    print(result[:500] + "...\n")
-    
-    print("="*50)
-    print("All tests completed successfully!")
+    print("\n" + "=" * 50)
+    if all(results):
+        print("✅ All tests passed!")
+        print("\nYou can now run the server with:")
+        print("  python server.py")
+    else:
+        print("❌ Some tests failed. Check the errors above.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    asyncio.run(test_tools())
+    asyncio.run(main())

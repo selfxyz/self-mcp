@@ -8,7 +8,7 @@ This MCP server provides AI-powered assistance for developers working with the S
 
 ## Current Capabilities
 
-### 🛠️ Three Core Tools
+### 🛠️ Five Core Tools
 
 1. **`explain_self_integration`**
    - Get detailed integration guides for specific use cases
@@ -37,6 +37,16 @@ This MCP server provides AI-powered assistance for developers working with the S
      - Nullifier reuse
      - Network errors
 
+4. **`check_self_status`**
+   - Check Self protocol deployment status
+   - Get contract addresses for different networks
+   - View RPC endpoints and block explorers
+
+5. **`generate_verification_config`**
+   - Generate complete verification configurations
+   - Creates matching frontend and backend code
+   - Supports all verification options
+
 ## Installation
 
 ### Prerequisites
@@ -46,14 +56,26 @@ This MCP server provides AI-powered assistance for developers working with the S
 
 ### Install Steps
 
-1. Clone or download this repository
-2. Navigate to the server directory:
+1. Clone the repository:
    ```bash
-   cd /path/to/self-mcp
+   git clone git@github.com:selfxyz/self-mcp.git
+   cd self-mcp
    ```
+
+2. Create a virtual environment (recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
 3. Install the package:
    ```bash
    pip install -e .
+   ```
+
+4. Verify installation:
+   ```bash
+   python -c "import self_mcp; print('✅ Self MCP installed successfully')"
    ```
 
 ## Usage
@@ -66,18 +88,39 @@ This MCP server provides AI-powered assistance for developers working with the S
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-   Add this configuration:
+   Add this configuration with **ABSOLUTE PATHS** (replace with your actual paths):
+   
+   **Option 1: Using system Python**
    ```json
    {
      "mcpServers": {
        "self-mcp": {
-         "command": "python",
-         "args": ["-m", "server"],
-         "cwd": "/absolute/path/to/self-mcp"
+         "command": "python3",
+         "args": ["server.py"],
+         "cwd": "/Users/YOUR_USERNAME/path/to/self-mcp"
        }
      }
    }
    ```
+
+   **Option 2: Using virtual environment (RECOMMENDED)**
+   ```json
+   {
+     "mcpServers": {
+       "self-mcp": {
+         "command": "/Users/YOUR_USERNAME/path/to/self-mcp/venv/bin/python",
+         "args": ["/Users/YOUR_USERNAME/path/to/self-mcp/server.py"],
+         "cwd": "/Users/YOUR_USERNAME/path/to/self-mcp"
+       }
+     }
+   }
+   ```
+
+   **Important Notes:**
+   - ⚠️ Use ABSOLUTE paths (starting with `/` on macOS/Linux or `C:\` on Windows)
+   - ⚠️ Replace `YOUR_USERNAME` with your actual username
+   - ⚠️ The `cwd` should point to the directory containing `server.py`
+   - ✅ Using a virtual environment is recommended for dependency isolation
 
 2. **Restart Claude Desktop**
 
@@ -92,12 +135,28 @@ This MCP server provides AI-powered assistance for developers working with the S
 
 Test the server directly:
 ```bash
-python -m server
+python server.py
 ```
 
 Or test individual tools:
 ```bash
 python test_server.py
+```
+
+### Real Example Configuration
+
+Here's an actual working configuration (replace paths with yours):
+
+```json
+{
+  "mcpServers": {
+    "self-mcp": {
+      "command": "/Users/nightmare/Projects/self-mcp/venv/bin/python",
+      "args": ["/Users/nightmare/Projects/self-mcp/server.py"],
+      "cwd": "/Users/nightmare/Projects/self-mcp"
+    }
+  }
+}
 ```
 
 ### With MCP Inspector
@@ -149,13 +208,26 @@ Assistant: [Explains the scope mismatch issue and shows how to fix it]
 - Debug common Self protocol errors
 - Learn best practices for privacy-preserving verification
 - Understand how to implement airdrops, age gates, and humanity checks
+- Access contract addresses and network configurations
+- Generate custom verification configurations
+- View complete example implementations
+- Access best practices documentation
+
+### 📚 New Resources Available:
+- `self://contracts/addresses` - Get deployed contract addresses
+- `self://examples/airdrop` - Complete airdrop example
+- `self://examples/age-gate` - Age verification example
+- `self://docs/best-practices` - Integration best practices
+
+### 💬 New Prompts:
+- `design-verification-flow` - Interactive flow design
+- `troubleshoot-integration` - Step-by-step troubleshooting
 
 ❌ **Not yet implemented:**
 - Direct blockchain interaction
 - Proof generation/validation
 - Live testing tools
-- Resource access (documentation, contract addresses)
-- Interactive prompts for guided setup
+- Sampling (LLM callbacks)
 
 ## Technical Details
 
@@ -169,29 +241,98 @@ Assistant: [Explains the scope mismatch issue and shows how to fix it]
 
 ```
 self-mcp/
-├── server.py          # Main MCP server with tools
-├── test_server.py     # Local testing script
-├── pyproject.toml     # Package configuration
-├── README.md          # This file
-├── __init__.py        # Package init
-└── .gitignore        # Git ignore rules
+├── server.py             # Entry point for MCP server
+├── self_mcp/             # Main package directory
+│   ├── __init__.py       # Package initialization
+│   ├── server.py         # MCP server setup
+│   ├── tools/            # Tool implementations
+│   │   ├── integration.py
+│   │   ├── code_generation.py
+│   │   ├── debugging.py
+│   │   ├── status.py
+│   │   └── config_generation.py
+│   ├── resources/        # Resource handlers
+│   │   ├── contract_addresses.py
+│   │   ├── examples.py
+│   │   └── best_practices.py
+│   ├── prompts/          # Interactive prompts
+│   │   ├── design_flow.py
+│   │   └── troubleshooting.py
+│   └── templates/        # Data templates
+│       ├── integration_guides.py
+│       ├── code_templates.py
+│       ├── error_solutions.py
+│       └── examples.py
+├── test_server.py        # Testing script
+├── pyproject.toml        # Package configuration
+├── README.md             # This file
+└── .gitignore           # Git ignore rules
 ```
 
 ## Troubleshooting
 
-**"MCP server not found"**
-- Ensure Python path is correct in Claude config
-- Use absolute paths, not relative
-- Check Python version: `python --version` (needs 3.12+)
+### Common Issues
 
-**"Module not found"**
-- Make sure you ran `pip install -e .` in the correct directory
-- Try using `python3` instead of `python` in config
+**"MCP server not found" or "spawn python ENOENT"**
+- ❌ Problem: Claude can't find Python
+- ✅ Solution: Use full absolute path to Python executable
+  ```json
+  "command": "/usr/bin/python3"  // or wherever your Python is
+  ```
+- To find your Python path: `which python3`
 
-**"Tools not showing"**
-- Restart Claude Desktop completely
-- Check for errors in Claude's developer console
-- Verify the server runs manually: `python -m server`
+**"No module named server" or "Module not found"**
+- ❌ Problem: Python can't find the server module
+- ✅ Solution: Use absolute path in args
+  ```json
+  "args": ["/Users/YOUR_USERNAME/path/to/self-mcp/server.py"]
+  ```
+
+**"Server disconnected" immediately**
+- ❌ Problem: Server crashes on startup
+- ✅ Solution: Test manually first
+  ```bash
+  cd /path/to/self-mcp
+  python server.py  # Should wait quietly (Ctrl+C to stop)
+  ```
+
+**Virtual environment issues**
+- ❌ Problem: Dependencies not found
+- ✅ Solution: Use venv Python in config
+  ```json
+  "command": "/path/to/self-mcp/venv/bin/python"
+  ```
+
+### Debugging Steps
+
+1. **Test the server manually:**
+   ```bash
+   cd /path/to/self-mcp
+   /path/to/venv/bin/python server.py
+   ```
+   Should run without output. Press Ctrl+C to stop.
+
+2. **Check Claude logs:**
+   - Open Claude Desktop
+   - View → Developer → Developer Tools
+   - Check Console for errors
+
+3. **Verify paths are absolute:**
+   - ✅ Good: `/Users/john/Projects/self-mcp`
+   - ❌ Bad: `~/Projects/self-mcp` or `./self-mcp`
+
+4. **Common working configuration:**
+   ```json
+   {
+     "mcpServers": {
+       "self-mcp": {
+         "command": "/Users/YOUR_USERNAME/Projects/self-mcp/venv/bin/python",
+         "args": ["/Users/YOUR_USERNAME/Projects/self-mcp/server.py"],
+         "cwd": "/Users/YOUR_USERNAME/Projects/self-mcp"
+       }
+     }
+   }
+   ```
 
 ## Future Enhancements
 
