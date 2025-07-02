@@ -1,0 +1,14 @@
+[project]
+name = "self-mcp"
+version = "0.1.0"
+description = "Self protocol MCP server for developer assistance"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["mcp[cli]>=1.9.4"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+self-mcp = "self_mcp.server:main"
