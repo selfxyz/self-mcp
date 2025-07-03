@@ -1,12 +1,14 @@
 """Tool for generating Self protocol integration code"""
 
 from typing import Literal
+from fastmcp import Context
 from ..templates import CODE_TEMPLATES
 
 
 async def generate_verification_code(
     component: Literal["frontend-qr", "backend-verify", "smart-contract"],
-    language: Literal["typescript", "javascript", "solidity"] = "typescript"
+    language: Literal["typescript", "javascript", "solidity"] = "typescript",
+    ctx: Context = None
 ) -> str:
     """
     Generate ready-to-use Self verification code for different components.
@@ -40,5 +42,9 @@ async def generate_verification_code(
         "backend-verify": "Self proof verification", 
         "smart-contract": "on-chain Self verification"
     }
+    
+    # Log to context if available (FastMCP 2.0 feature)
+    if ctx:
+        await ctx.info(f"Generated {component} code in {language}")
     
     return template.replace("{component_context}", context_map[component])
