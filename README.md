@@ -72,6 +72,11 @@ This MCP server provides AI-powered assistance for developers working with the S
    ```bash
    pip install -e .
    ```
+   
+   Or install directly without editable mode:
+   ```bash
+   pip install .
+   ```
 
 4. Verify installation:
    ```bash
@@ -79,6 +84,59 @@ This MCP server provides AI-powered assistance for developers working with the S
    ```
 
 ## Usage
+
+### With Cursor
+
+1. **Create MCP configuration file:**
+
+   Create a file called `mcp.json` in your project root with this configuration:
+   
+   ```json
+   {
+     "mcpServers": {
+       "self-mcp": {
+         "command": "python",
+         "args": ["/path/to/self-mcp/server.py"],
+         "env": {
+           "PYTHONPATH": "/path/to/self-mcp"
+         }
+       }
+     }
+   }
+   ```
+
+   **For virtual environment (recommended):**
+   ```json
+   {
+     "mcpServers": {
+       "self-mcp": {
+         "command": "/path/to/self-mcp/venv/bin/python",
+         "args": ["/path/to/self-mcp/server.py"],
+         "env": {
+           "PYTHONPATH": "/path/to/self-mcp"
+         }
+       }
+     }
+   }
+   ```
+
+2. **Enable in Cursor:**
+   - Open Cursor Settings
+   - Go to Features → Composer
+   - Enable "Model Context Protocol"
+   - Cursor will automatically detect the `mcp.json` file
+
+3. **Use in Composer:**
+   - Open Composer (Cmd/Ctrl + K)
+   - The Self MCP tools will appear under "Available Tools"
+   - Ask questions like:
+     - "How do I integrate Self for age verification?"
+     - "Generate TypeScript code for Self QR verification"
+     - "Debug Self error: Invalid scope validation"
+
+4. **Toggle specific tools:**
+   - Click on tool names in the tools list to enable/disable them
+   - Disabled tools won't be loaded into context
 
 ### With Claude Desktop
 
@@ -231,7 +289,9 @@ Assistant: [Explains the scope mismatch issue and shows how to fix it]
 
 ## Technical Details
 
-- Built with FastMCP for simple, Pythonic MCP server creation
+- Built with FastMCP 2.0 for enhanced MCP server capabilities
+- Uses tool annotations for better LLM understanding
+- Implements Context support for logging and progress reporting
 - Uses real Self protocol SDK patterns and best practices
 - No external API calls - all knowledge is embedded
 - Supports async operations
