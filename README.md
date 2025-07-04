@@ -4,21 +4,17 @@ MCP server for [Self protocol](https://self.xyz) integration assistance. Helps d
 
 ## Installation
 
-### Option 1: Install from PyPI (Coming Soon)
-```bash
-pip install self-mcp
-```
-
-### Option 2: Install from GitHub
 ```bash
 pip install git+https://github.com/selfxyz/self-mcp.git
 ```
 
-### Option 3: Install from source
+After installation, run with: `self-mcp`
+
+### Development Installation
 ```bash
 git clone https://github.com/selfxyz/self-mcp.git
-cd self-mcp
-pip install .
+cd self-mcp/self-mcp
+pip install -e .
 ```
 
 ## Configuration
