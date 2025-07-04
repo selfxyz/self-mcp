@@ -9,7 +9,9 @@ from .tools import (
     generate_verification_code,
     debug_verification_error,
     check_self_status,
-    generate_verification_config
+    generate_verification_config,
+    explain_sdk_setup,
+    generate_eu_id_verification
 )
 
 # Import all resources
@@ -63,6 +65,20 @@ mcp.tool(
         readOnlyHint=True
     )
 )(generate_verification_config)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Explain Self SDK setup requirements (IConfigStorage, UserIdType, etc.)",
+        readOnlyHint=True
+    )
+)(explain_sdk_setup)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Generate EU ID card verification code (V2 feature)",
+        readOnlyHint=True
+    )
+)(generate_eu_id_verification)
 
 # Register resources
 mcp.resource("self://contracts/addresses")(get_contract_addresses)
