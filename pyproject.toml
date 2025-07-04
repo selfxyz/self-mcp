@@ -1,10 +1,29 @@
 [project]
 name = "self-mcp"
-version = "0.1.0"
-description = "Self protocol MCP server for developer assistance"
+version = "0.1.1"
+description = "MCP server for Self protocol integration assistance"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = ["fastmcp>=2.10.0"]
+authors = [{ name = "Self Team" }]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/selfxyz/self-mcp"
+Repository = "https://github.com/selfxyz/self-mcp"
+Issues = "https://github.com/selfxyz/self-mcp/issues"
+
+[project.scripts]
+self-mcp = "self_mcp.cli:main"
 
 [build-system]
 requires = ["hatchling"]
