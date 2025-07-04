@@ -49,42 +49,78 @@ const selfApp = new SelfAppBuilder({
 document.getElementById('qr-container').appendChild(selfApp);"""
     },
     "backend-verify": {
-        "typescript": """import { SelfBackendVerifier, getUserIdentifier } from '@selfxyz/core';
+        "typescript": """import { 
+  SelfBackendVerifier, 
+  AttestationId,
+  UserIdType,
+  IConfigStorage,
+  castToUserIdentifier
+} from '@selfxyz/core';
+
+// Initialize config storage (required for Self SDK)
+class SimpleConfigStorage implements IConfigStorage {
+  private configs = new Map();
+  
+  async getConfig(configId: string) {
+    return this.configs.get(configId);
+  }
+  
+  async setConfig(configId: string, config: any) {
+    this.configs.set(configId, config);
+  }
+}
 
 // Initialize verifier for {component_context}
+const configStorage = new SimpleConfigStorage();
+const allowedIds = new Map([
+  [AttestationId.E_PASSPORT, true], // Allow passport verification
+  // [AttestationId.EU_ID_CARD, true], // Uncomment to allow EU ID cards
+]);
+
 const verifier = new SelfBackendVerifier(
-  'https://forno.celo.org', // Celo RPC URL
-  'my-app-unique-scope' // Must match frontend exactly
+  'my-app-unique-scope', // Must match frontend exactly
+  'https://api.self.xyz/v1', // Self API endpoint
+  false, // mockPassport: false for production
+  allowedIds,
+  configStorage,
+  UserIdType.ADDRESS // or UserIdType.UUID
 );
 
 // Configure verification requirements
-verifier.setMinimumAge(18); // If age verification needed
-verifier.excludeCountries('IRN', 'PRK'); // If country restrictions needed
-verifier.enableNameAndDobOfacCheck(); // If OFAC check needed
+await verifier.setMinimumAge(18); // If age verification needed
+await verifier.excludeCountries(['IRN', 'PRK']); // If country restrictions needed
+await verifier.enableNameAndDobOfacCheck(); // If OFAC check needed
 
 // Express.js endpoint example
 app.post('/api/verify', async (req, res) => {
   try {
-    const { proof, publicSignals } = req.body;
+    const { attestationId, proof, publicSignals, userContextData } = req.body;
     
-    // Extract user ID from proof
-    const userId = await getUserIdentifier(publicSignals);
+    // Convert public signals to proper format
+    const pubSignals = publicSignals.map((s: string) => BigInt(s));
     
     // Verify the proof
-    const result = await verifier.verify(proof, publicSignals);
+    const result = await verifier.verify(
+      attestationId,
+      proof,
+      pubSignals,
+      userContextData || ''
+    );
     
     if (result.isValid) {
-      // Success! User is verified
-      // Store nullifier to prevent reuse: result.nullifier
-      // Access disclosed data: result.credentialSubject
+      // Extract user identifier
+      const userId = castToUserIdentifier(
+        pubSignals,
+        UserIdType.ADDRESS
+      );
       
+      // Success! User is verified
       res.json({
         success: true,
         userId,
         nullifier: result.nullifier,
-        // Only return what you need
-        age: result.credentialSubject.older_than,
-        nationality: result.credentialSubject.nationality
+        // Access disclosed data
+        credentialSubject: result.credentialSubject
       });
     } else {
       // Verification failed
@@ -100,29 +136,82 @@ app.post('/api/verify', async (req, res) => {
     });
   }
 });""",
-        "javascript": """const { SelfBackendVerifier, getUserIdentifier } = require('@selfxyz/core');
+        "javascript": """const { 
+  SelfBackendVerifier, 
+  AttestationId,
+  UserIdType,
+  castToUserIdentifier
+} = require('@selfxyz/core');
+
+// Initialize config storage (required for Self SDK)
+class SimpleConfigStorage {
+  constructor() {
+    this.configs = new Map();
+  }
+  
+  async getConfig(configId) {
+    return this.configs.get(configId);
+  }
+  
+  async setConfig(configId, config) {
+    this.configs.set(configId, config);
+  }
+}
 
 // Initialize verifier for {component_context}
+const configStorage = new SimpleConfigStorage();
+const allowedIds = new Map([
+  [AttestationId.E_PASSPORT, true], // Allow passport verification
+]);
+
 const verifier = new SelfBackendVerifier(
-  'https://forno.celo.org', // Celo RPC URL
-  'my-app-unique-scope' // Must match frontend exactly
+  'my-app-unique-scope', // Must match frontend exactly
+  'https://api.self.xyz/v1', // Self API endpoint
+  false, // mockPassport: false for production
+  allowedIds,
+  configStorage,
+  UserIdType.ADDRESS // or UserIdType.UUID
 );
 
 // Configure verification requirements
-verifier.setMinimumAge(18); // If age verification needed
+async function setupVerifier() {
+  await verifier.setMinimumAge(18);
+  await verifier.excludeCountries(['IRN', 'PRK']);
+}
 
 // Express.js endpoint example
 app.post('/api/verify', async (req, res) => {
   try {
-    const { proof, publicSignals } = req.body;
+    const { attestationId, proof, publicSignals, userContextData } = req.body;
+    
+    // Convert public signals to proper format
+    const pubSignals = publicSignals.map(s => BigInt(s));
     
     // Verify the proof
-    const result = await verifier.verify(proof, publicSignals);
+    const result = await verifier.verify(
+      attestationId,
+      proof,
+      pubSignals,
+      userContextData || ''
+    );
     
     if (result.isValid) {
-      res.json({ success: true });
+      // Extract user identifier
+      const userId = castToUserIdentifier(
+        pubSignals,
+        UserIdType.ADDRESS
+      );
+      
+      res.json({ 
+        success: true,
+        userId,
+        nullifier: result.nullifier
+      });
     } else {
-      res.status(400).json({ success: false });
+      res.status(400).json({ 
+        success: false,
+        errors: result.isValidDetails 
+      });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -22,9 +22,11 @@ CELO_NETWORKS = {
         "api": "https://api-alfajores.celoscan.io/api",
         "currency": "CELO",
         "contracts": {
-            "hub": "Not deployed",
-            "registry": "Not deployed",
-            "verifyAll": "Not deployed"
+            "hub": "0x68c931C9a534D37aa78094877F46fE46a49F1A51",  # Staging hub
+            "registry": "0xE1A05bbee7D8DF2ee2A81dEE8FB22e07B07D1084",  # Staging registry
+            "registryIdCard": "0xF77Be82318F11392Efb5F1062D954911d6086537",  # ID card registry
+            "customVerifier": "0xC95e53bB0d26295c5814F4cE1d72fB4c2df0Fd4f",
+            "testContract": "0x9633b661082BaB295Ff4883bc47E175e06afB5Bf"  # TestSelfVerificationRoot
         }
     }
 }

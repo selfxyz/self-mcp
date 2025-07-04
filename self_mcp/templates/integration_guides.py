@@ -13,11 +13,16 @@ Protect your token airdrop from bots and sybil attacks by requiring users to pro
    - Install: `npm install @selfxyz/qrcode`
    - Display QR code for users to scan with Self app
    - Set verification endpoint to your backend
+   - Configure scope to match backend exactly
 
 2. **Backend - Verify Proofs**:
    - Install: `npm install @selfxyz/core`
    - Create endpoint to receive and verify proofs
-   - Check humanity (attestation_id = 1)
+   - Important: Backend setup requires:
+     - IConfigStorage implementation for caching
+     - AttestationId.E_PASSPORT in allowedIds
+     - UserIdType (ADDRESS or UUID)
+   - Check attestation_id = 1 for passport
    - Store nullifier to prevent double claims
 
 3. **Smart Contract (Optional)**:

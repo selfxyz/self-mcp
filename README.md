@@ -2,13 +2,22 @@
 
 A Model Context Protocol (MCP) server that helps developers integrate the Self protocol for privacy-preserving identity verification using government-issued IDs.
 
+## 🎉 Recent Updates (v0.2.0)
+
+- **Fixed SDK Integration**: Backend code now uses correct `SelfBackendVerifier` constructor with all required parameters
+- **Added SDK Setup Tool**: New `explain_sdk_setup` tool explains IConfigStorage, UserIdType, and AttestationId configuration
+- **EU ID Card Support**: New `generate_eu_id_verification` tool for V2 features
+- **Accurate Code Generation**: All code templates now match actual Self SDK implementation
+- **Testnet Support**: Added staging/testnet contract addresses
+- **FastMCP 2.0**: Upgraded to FastMCP 2.0 with enhanced features
+
 ## Overview
 
 This MCP server provides AI-powered assistance for developers working with the Self protocol. It helps with integration, code generation, and debugging - making it easier to add passport-based verification to your applications.
 
 ## Current Capabilities
 
-### 🛠️ Five Core Tools
+### 🛠️ Seven Core Tools
 
 1. **`explain_self_integration`**
    - Get detailed integration guides for specific use cases
@@ -21,7 +30,7 @@ This MCP server provides AI-powered assistance for developers working with the S
    - Generate working code snippets for your integration
    - Components available:
      - `"frontend-qr"` - QR code setup for web apps
-     - `"backend-verify"` - Server-side proof verification
+     - `"backend-verify"` - Server-side proof verification (with correct SDK usage!)
      - `"smart-contract"` - Solidity contracts for on-chain verification
    - Languages supported:
      - `"typescript"` (default)
@@ -41,11 +50,28 @@ This MCP server provides AI-powered assistance for developers working with the S
    - Check Self protocol deployment status
    - Get contract addresses for different networks
    - View RPC endpoints and block explorers
+   - Includes testnet/staging addresses
 
 5. **`generate_verification_config`**
    - Generate complete verification configurations
    - Creates matching frontend and backend code
    - Supports all verification options
+
+6. **`explain_sdk_setup`** *(NEW!)*
+   - Explains Self SDK backend requirements
+   - Topics available:
+     - `"config-storage"` - IConfigStorage implementation
+     - `"user-id-type"` - UserIdType options (ADDRESS vs UUID)
+     - `"attestation-ids"` - Document type configuration
+     - `"full-setup"` - Complete backend setup guide
+
+7. **`generate_eu_id_verification`** *(NEW!)*
+   - Generate code for EU ID card support (V2 feature)
+   - Components available:
+     - `"frontend"` - QR code with EU ID support
+     - `"backend"` - Verification with document type detection
+     - `"smart-contract"` - Contracts with document bonuses
+   - Supports different multipliers for different documents
 
 ## Installation
 
@@ -245,6 +271,18 @@ User: "Debug: Invalid scope validation failed"
 Assistant: [Explains the scope mismatch issue and shows how to fix it]
 ```
 
+### SDK Setup Help
+```
+User: "Explain config storage setup"
+Assistant: [Shows IConfigStorage implementation with examples for in-memory and Redis]
+```
+
+### EU ID Support
+```
+User: "Generate backend code for EU ID verification"
+Assistant: [Provides backend code that handles both passports and EU ID cards]
+```
+
 ## What Values Are Required?
 
 ### For `explain_self_integration`:
@@ -258,6 +296,13 @@ Assistant: [Explains the scope mismatch issue and shows how to fix it]
 - `error_message`: The error text you're seeing
 - `context` (optional): Hint about error type like `"scope-mismatch"`, `"proof-invalid"`, etc.
 
+### For `explain_sdk_setup`:
+- `topic`: Must be one of: `"config-storage"`, `"user-id-type"`, `"attestation-ids"`, `"full-setup"`
+
+### For `generate_eu_id_verification`:
+- `component`: Must be one of: `"frontend"`, `"backend"`, `"smart-contract"`
+- `language` (optional): Defaults to `"typescript"`. Can be `"javascript"` or `"solidity"`
+
 ## What's Possible Currently?
 
 ✅ **You can:**
@@ -266,10 +311,13 @@ Assistant: [Explains the scope mismatch issue and shows how to fix it]
 - Debug common Self protocol errors
 - Learn best practices for privacy-preserving verification
 - Understand how to implement airdrops, age gates, and humanity checks
-- Access contract addresses and network configurations
+- Access contract addresses and network configurations (including testnet)
 - Generate custom verification configurations
 - View complete example implementations
 - Access best practices documentation
+- **NEW**: Get proper SDK setup guidance (IConfigStorage, UserIdType, etc.)
+- **NEW**: Generate code for EU ID card verification (V2 feature)
+- **NEW**: Understand document type configurations and bonuses
 
 ### 📚 New Resources Available:
 - `self://contracts/addresses` - Get deployed contract addresses
