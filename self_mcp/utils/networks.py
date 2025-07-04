@@ -9,7 +9,7 @@ CELO_NETWORKS = {
         "api": "https://api.celoscan.io/api",
         "currency": "CELO",
         "contracts": {
-            "hub": "0x77117D60eaB7C044e785D68edB6C7E0e134970Ea",
+            "hub": "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF",
             "registry": "0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968",
             "verifyAll": "0xe6D61680A6ED381bb5A0dB5cF4E9Cc933cF43915"
         }
@@ -22,9 +22,9 @@ CELO_NETWORKS = {
         "api": "https://api-alfajores.celoscan.io/api",
         "currency": "CELO",
         "contracts": {
-            "hub": "Not deployed",
-            "registry": "Not deployed",
-            "verifyAll": "Not deployed"
+            "hub": "0x68c931C9a534D37aa78094877F46fE46a49F1A51",
+            "registry": "0x37F5CB8cB1f6B00aa768D8aA99F1A9289802A968",
+            "verifyAll": "0xe6D61680A6ED381bb5A0dB5cF4E9Cc933cF43915"
         }
     }
 }

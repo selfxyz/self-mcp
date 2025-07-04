@@ -4,21 +4,26 @@ ERROR_SOLUTIONS = {
     "scope": {
         "problem": "Scope mismatch between frontend and backend",
         "solution": """
-The 'scope' parameter must match EXACTLY between frontend and backend:
+The 'scope' parameter must match EXACTLY between frontend and backend (V2):
 
 **Frontend (QR code):**
 ```typescript
 new SelfAppBuilder({
-  scope: 'my-app-v1', // This exact string
+  scope: 'my-app-v2', // This exact string
+  version: 2, // V2 protocol
   ...
 })
 ```
 
-**Backend (verifier):**
+**Backend (verifier V2):**
 ```typescript
 new SelfBackendVerifier(
-  rpcUrl,
-  'my-app-v1' // Must be identical
+  'my-app-v2', // Must be identical to frontend scope
+  'https://myapi.com/verify', // Endpoint URL
+  false, // Production mode
+  allowedIds, // Allowed document types
+  configStorage, // V2 IConfigStorage implementation
+  UserIdType.UUID // User identifier type
 )
 ```
 
@@ -26,6 +31,7 @@ Common mistakes:
 - Extra spaces or typos
 - Different versions (v1 vs v2)
 - Using URLs as scope (use simple strings instead)
+- Wrong constructor parameter order in V2
 """,
         "related": ["Invalid scope", "Scope validation failed"]
     },
@@ -56,28 +62,48 @@ const { proof, publicSignals } = req.body;
     "age": {
         "problem": "Age verification configuration error",
         "solution": """
-Age verification requirements:
+Age verification requirements (V2):
 
-1. **Valid age range: 10-100 years**
+1. **Frontend disclosures must match backend config:**
 ```typescript
-verifier.setMinimumAge(18); // ✓ Valid
-verifier.setMinimumAge(5);  // ✗ Too low
-verifier.setMinimumAge(150); // ✗ Too high
-```
+// Frontend
+new SelfAppBuilder({
+  disclosures: {
+    minimumAge: 18 // Must match backend exactly
+  }
+})
 
-2. **Frontend must request age disclosure:**
-```typescript
-disclosures: {
-  minimumAge: 18 // Must be set in QR code
+// Backend IConfigStorage
+async getConfig(configId: string) {
+  return {
+    olderThan: 18, // Must match frontend minimumAge
+    excludedCountries: [],
+    ofac: false
+  };
 }
 ```
 
-3. **Check proof includes age:**
+2. **Valid age range: 10-100 years**
 ```typescript
-result.credentialSubject.older_than // Should have value
+olderThan: 18, // ✓ Valid
+olderThan: 5,  // ✗ Too low  
+olderThan: 150 // ✗ Too high
 ```
+
+3. **Check V2 age verification result:**
+```typescript
+if (result.isValidDetails.isValid && result.isValidDetails.isOlderThanValid) {
+  // Age verification passed
+  const ageProof = result.discloseOutput.olderThan; // Actual age proof
+}
+```
+
+4. **Common V2 configuration errors:**
+- Frontend minimumAge ≠ backend olderThan
+- Missing IConfigStorage implementation
+- ConfigMismatchError due to disclosure mismatch
 """,
-        "related": ["Invalid age", "minimumAge must be between", "Age verification failed"]
+        "related": ["Invalid age", "minimumAge must be between", "Age verification failed", "ConfigMismatchError"]
     },
     "nullifier": {
         "problem": "Nullifier already used or invalid",
@@ -142,5 +168,63 @@ curl https://alfajores-forno.celo-testnet.org -X POST -H "Content-Type: applicat
 - Rate limiting on free tier
 """,
         "related": ["Network error", "RPC", "Connection failed", "Celo"]
+    },
+    "config": {
+        "problem": "V2 Configuration mismatch between frontend and backend",
+        "solution": """
+V2 introduces ConfigMismatchError when frontend disclosures don't match backend configuration:
+
+**Frontend disclosures must exactly match backend IConfigStorage:**
+
+```typescript
+// Frontend
+new SelfAppBuilder({
+  disclosures: {
+    minimumAge: 18,
+    excludedCountries: ['IRN', 'PRK'],
+    ofac: true,
+    nationality: true,
+    name: false
+  }
+})
+
+// Backend IConfigStorage - MUST MATCH
+class MyConfigStorage implements IConfigStorage {
+  async getConfig(configId: string) {
+    return {
+      olderThan: 18, // = minimumAge
+      excludedCountries: ['IRN', 'PRK'], // = excludedCountries
+      ofac: true, // = ofac
+      // nationality: true (implied by frontend request)
+      // name: false (not requested in frontend)
+    };
+  }
+}
+```
+
+**Common mismatches:**
+- Different age requirements (minimumAge ≠ olderThan)
+- Different excluded countries arrays
+- Different OFAC settings (true vs false)
+- Requesting fields in frontend but not configuring in backend
+- Missing IConfigStorage implementation
+
+**Debug ConfigMismatchError:**
+```typescript
+try {
+  const result = await verifier.verify(attestationId, proof, pubSignals, userContextData);
+} catch (error) {
+  if (error instanceof ConfigMismatchError) {
+    console.log('Configuration issues:', error.issues);
+    // Fix frontend disclosures or backend config based on error.issues
+  }
+}
+```
+
+**Use Configuration Tools:**
+- Visit https://tools.self.xyz/ to generate matching configurations
+- Ensure both frontend and backend use the same config ID
+""",
+        "related": ["ConfigMismatchError", "Configuration mismatch", "Disclosure mismatch", "IConfigStorage"]
     }
 }

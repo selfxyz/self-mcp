@@ -1,189 +1,391 @@
-"""Code templates for Self protocol components"""
+"""Code templates for Self protocol components based on official documentation"""
 
 CODE_TEMPLATES = {
     "frontend-qr": {
-        "typescript": """import { SelfAppBuilder } from '@selfxyz/qrcode';
+        "typescript": """'use client';
 
-// Initialize Self QR code for {component_context}
-const selfApp = new SelfAppBuilder({
-  appName: 'My Application',
-  scope: 'my-app-unique-scope', // Must match backend exactly
-  endpoint: 'https://myapi.com/api/verify', // Your verification endpoint
-  disclosures: {
-    // Configure what to verify
-    minimumAge: 18, // Optional: age verification
-    nationality: true, // Optional: reveal nationality
-    excludedCountries: ['IRN', 'PRK'], // Optional: exclude countries
-    ofac: true, // Optional: OFAC check
-  },
-  // Optional: Add your logo
-  logoBase64: 'data:image/png;base64,...',
-  // Optional: User identifier
-  userId: 'user-123'
-}).build();
+import React, { useState, useEffect } from 'react';
+import SelfQRcodeWrapper, { SelfAppBuilder } from '@selfxyz/qrcode';
+import { v4 as uuidv4 } from 'uuid';
 
-// React component example
-export function VerificationQR() {
+// Self QR code component for {component_context}
+function VerificationQR() {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Generate user ID when component mounts
+    setUserId(uuidv4());
+  }, []);
+
+  if (!userId) return null;
+
+  // Create SelfApp configuration
+  const selfApp = new SelfAppBuilder({
+    appName: "My Application",
+    scope: "my-application-scope",
+    endpoint: "https://myapp.com/api/verify",
+    userId,
+    version: 2, // V2 protocol
+    userDefinedData: Buffer.from(JSON.stringify({
+      action: 'verification',
+      timestamp: Date.now()
+    })).toString('hex').padEnd(128, '0'),
+    disclosures: {
+      minimumAge: 18,
+      excludedCountries: ['IRN', 'PRK'],
+      ofac: true,
+      name: true,
+      nationality: true
+    }
+  }).build();
+
   return (
-    <div>
-      <h2>Verify with Self</h2>
-      {selfApp}
+    <div className="verification-container">
+      <h1>Verify Your Identity</h1>
+      <p>Scan this QR code with the Self app to verify your identity</p>
+      
+      <SelfQRcodeWrapper
+        selfApp={selfApp}
+        onSuccess={() => {
+          console.log("Verification successful!");
+          // Handle successful verification
+        }}
+        size={350}
+      />
+      
+      <p className="text-sm text-gray-500">
+        User ID: {userId.substring(0, 8)}...
+      </p>
     </div>
   );
-}""",
-        "javascript": """import { SelfAppBuilder } from '@selfxyz/qrcode';
+}
 
-// Initialize Self QR code for {component_context}
-const selfApp = new SelfAppBuilder({
-  appName: 'My Application',
-  scope: 'my-app-unique-scope', // Must match backend exactly
-  endpoint: 'https://myapi.com/api/verify', // Your verification endpoint
-  disclosures: {
-    // Configure what to verify
-    minimumAge: 18, // Optional: age verification
-    nationality: true, // Optional: reveal nationality
-  }
-}).build();
+export default VerificationQR;""",
+        "javascript": """import React, { useState, useEffect } from 'react';
+import SelfQRcodeWrapper, { SelfAppBuilder } from '@selfxyz/qrcode';
+import { v4 as uuidv4 } from 'uuid';
 
-// Add to your HTML
-document.getElementById('qr-container').appendChild(selfApp);"""
+// Self QR code component for {component_context}
+function VerificationQR() {
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    // Generate user ID when component mounts
+    setUserId(uuidv4());
+  }, []);
+
+  if (!userId) return null;
+
+  // Create SelfApp configuration
+  const selfApp = new SelfAppBuilder({
+    appName: "My Application",
+    scope: "my-application-scope",
+    endpoint: "https://myapp.com/api/verify",
+    userId,
+    version: 2, // V2 protocol
+    userDefinedData: Buffer.from(JSON.stringify({
+      action: 'verification',
+      timestamp: Date.now()
+    })).toString('hex').padEnd(128, '0'),
+    disclosures: {
+      minimumAge: 18,
+      excludedCountries: ['IRN', 'PRK'],
+      ofac: true,
+      name: true,
+      nationality: true
+    }
+  }).build();
+
+  return (
+    React.createElement('div', { className: 'verification-container' },
+      React.createElement('h1', null, 'Verify Your Identity'),
+      React.createElement('p', null, 'Scan this QR code with the Self app to verify your identity'),
+      React.createElement(SelfQRcodeWrapper, {
+        selfApp: selfApp,
+        onSuccess: () => {
+          console.log('Verification successful!');
+          // Handle successful verification
+        },
+        size: 350
+      }),
+      React.createElement('p', { className: 'text-sm text-gray-500' },
+        'User ID: ' + userId.substring(0, 8) + '...'
+      )
+    )
+  );
+}
+
+export default VerificationQR;"""
     },
     "backend-verify": {
-        "typescript": """import { SelfBackendVerifier, getUserIdentifier } from '@selfxyz/core';
+        "typescript": """import { NextApiRequest, NextApiResponse } from 'next';
+import { 
+  SelfBackendVerifier, 
+  AttestationId, 
+  UserIdType,
+  IConfigStorage,
+  ConfigMismatchError 
+} from '@selfxyz/core';
 
-// Initialize verifier for {component_context}
-const verifier = new SelfBackendVerifier(
-  'https://forno.celo.org', // Celo RPC URL
-  'my-app-unique-scope' // Must match frontend exactly
+// Configuration storage implementation
+class ConfigStorage implements IConfigStorage {
+  async getConfig(configId: string) {
+    return {
+      olderThan: 18,
+      excludedCountries: ['IRN', 'PRK'],
+      ofac: true
+    };
+  }
+  
+  async getActionId(userIdentifier: string, userDefinedData: string) {
+    return 'default_config';
+  }
+}
+
+// Initialize verifier once
+const allowedIds = new Map();
+allowedIds.set(1, true); // Accept passports
+allowedIds.set(2, true); // Accept EU ID cards
+
+const selfBackendVerifier = new SelfBackendVerifier(
+  'my-application-scope',
+  'https://myapp.com/api/verify',
+  false,
+  allowedIds,
+  new ConfigStorage(),
+  UserIdType.UUID
 );
 
-// Configure verification requirements
-verifier.setMinimumAge(18); // If age verification needed
-verifier.excludeCountries('IRN', 'PRK'); // If country restrictions needed
-verifier.enableNameAndDobOfacCheck(); // If OFAC check needed
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'POST') {
+    try {
+      const { attestationId, proof, pubSignals, userContextData } = req.body;
 
-// Express.js endpoint example
-app.post('/api/verify', async (req, res) => {
-  try {
-    const { proof, publicSignals } = req.body;
-    
-    // Extract user ID from proof
-    const userId = await getUserIdentifier(publicSignals);
-    
-    // Verify the proof
-    const result = await verifier.verify(proof, publicSignals);
-    
-    if (result.isValid) {
-      // Success! User is verified
-      // Store nullifier to prevent reuse: result.nullifier
-      // Access disclosed data: result.credentialSubject
+      if (!attestationId || !proof || !pubSignals || !userContextData) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Verify the proof
+      const result = await selfBackendVerifier.verify(
+        attestationId,
+        proof,
+        pubSignals,
+        userContextData
+      );
       
-      res.json({
-        success: true,
-        userId,
-        nullifier: result.nullifier,
-        // Only return what you need
-        age: result.credentialSubject.older_than,
-        nationality: result.credentialSubject.nationality
-      });
-    } else {
-      // Verification failed
-      res.status(400).json({
-        success: false,
-        errors: result.isValidDetails
+      if (result.isValidDetails.isValid) {
+        // Return successful verification response
+        return res.status(200).json({
+          status: 'success',
+          result: true,
+          credentialSubject: result.discloseOutput
+        });
+      } else {
+        // Return failed verification response
+        return res.status(400).json({
+          status: 'error',
+          result: false,
+          message: 'Verification failed',
+          details: result.isValidDetails
+        });
+      }
+    } catch (error) {
+      if (error instanceof ConfigMismatchError) {
+        return res.status(400).json({
+          status: 'error',
+          result: false,
+          message: 'Configuration mismatch',
+          issues: error.issues
+        });
+      }
+      
+      console.error('Error verifying proof:', error);
+      return res.status(500).json({
+        status: 'error',
+        result: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
+  } else {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
-});""",
-        "javascript": """const { SelfBackendVerifier, getUserIdentifier } = require('@selfxyz/core');
+}""",
+        "javascript": """import { 
+  SelfBackendVerifier, 
+  AttestationId, 
+  UserIdType,
+  ConfigMismatchError 
+} from '@selfxyz/core';
 
-// Initialize verifier for {component_context}
-const verifier = new SelfBackendVerifier(
-  'https://forno.celo.org', // Celo RPC URL
-  'my-app-unique-scope' // Must match frontend exactly
+// Configuration storage implementation
+class SimpleConfigStorage {
+  async getConfig(configId) {
+    return {
+      olderThan: 18,
+      excludedCountries: ['IRN', 'PRK'],
+      ofac: true
+    };
+  }
+  
+  async getActionId(userIdentifier, userDefinedData) {
+    return 'default_config';
+  }
+}
+
+// Define which attestation types to accept
+const allowedIds = new Map();
+allowedIds.set(1, true); // 1 = passport
+allowedIds.set(2, true); // 2 = EU ID card
+
+// Create configuration storage
+const configStorage = new SimpleConfigStorage();
+
+// Initialize the verifier
+const selfBackendVerifier = new SelfBackendVerifier(
+  "my-app-scope",
+  "https://myapp.com/api/verify",
+  false,
+  allowedIds,
+  configStorage,
+  UserIdType.UUID
 );
 
-// Configure verification requirements
-verifier.setMinimumAge(18); // If age verification needed
-
 // Express.js endpoint example
-app.post('/api/verify', async (req, res) => {
+export async function POST(request) {
   try {
-    const { proof, publicSignals } = req.body;
+    const { attestationId, proof, pubSignals, userContextData } = await request.json();
     
-    // Verify the proof
-    const result = await verifier.verify(proof, publicSignals);
+    const result = await selfBackendVerifier.verify(
+      attestationId,
+      proof,
+      pubSignals,
+      userContextData
+    );
     
-    if (result.isValid) {
-      res.json({ success: true });
+    if (result.isValidDetails.isValid) {
+      console.log('Verification successful');
+      console.log('User ID:', result.userData.userIdentifier);
+      
+      return Response.json({
+        verified: true,
+        userIdentifier: result.userData.userIdentifier,
+        nationality: result.discloseOutput.nationality,
+        ageVerified: result.isValidDetails.isOlderThanValid
+      });
     } else {
-      res.status(400).json({ success: false });
+      return Response.json({ verified: false }, { status: 400 });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.name === 'ConfigMismatchError') {
+      console.error('Configuration mismatch:', error.issues);
+      return Response.json({ error: 'Configuration mismatch' }, { status: 400 });
+    }
+    
+    console.error('Verification error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
-});"""
+}"""
     },
     "smart-contract": {
         "solidity": """// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@selfxyz/contracts/contracts/abstract/SelfVerificationRoot.sol";
+import {SelfVerificationRoot} from "@selfxyz/contracts/contracts/abstract/SelfVerificationRoot.sol";
+import {ISelfVerificationRoot} from "@selfxyz/contracts/contracts/interfaces/ISelfVerificationRoot.sol";
+import {SelfStructs} from "@selfxyz/contracts/contracts/libraries/SelfStructs.sol";
+import {AttestationId} from "@selfxyz/contracts/contracts/constants/AttestationId.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-// Example contract for {component_context}
-contract MyVerifiedApp is SelfVerificationRoot {
-    // Track who has already verified (prevent double actions)
-    mapping(uint256 => bool) public nullifierUsed;
+// V2 Contract for {component_context}
+contract ExampleV2 is SelfVerificationRoot, Ownable {
+    // Your app-specific configuration ID
+    bytes32 public configId;
     
-    // Example: Track verified users
+    // Track verified users
     mapping(address => bool) public verifiedUsers;
     
-    constructor(address _hubAddress) SelfVerificationRoot(_hubAddress) {}
+    // Store verification details (optional)
+    mapping(uint256 => ISelfVerificationRoot.GenericDiscloseOutputV2) public verificationDetails;
     
-    function verifyAndExecute(
-        SelfProof memory proof
-    ) public {
-        // 1. Verify the Self proof
-        verifySelfProof(proof);
-        
-        // 2. Check nullifier hasn't been used
-        require(!nullifierUsed[proof.nullifier], "Proof already used");
-        nullifierUsed[proof.nullifier] = true;
-        
-        // 3. Validate requirements
-        require(proof.scope == keccak256("my-app-unique-scope"), "Invalid scope");
-        require(proof.attestationId == 1, "Must be passport"); // 1 = passport
-        
-        // 4. Optional: Check age
-        require(proof.olderThan >= 18, "Must be 18 or older");
-        
-        // 5. Execute your logic
-        verifiedUsers[msg.sender] = true;
-        
-        // Example: Mint NFT, allow access, distribute tokens, etc.
+    // Events
+    event UserVerified(
+        address indexed user,
+        uint256 indexed nullifier,
+        bytes32 indexed attestationId,
+        uint256 userIdentifier
+    );
+    
+    constructor(
+        address _identityVerificationHubV2, // V2 Hub address
+        uint256 _scope // Application-specific scope identifier
+    ) 
+        SelfVerificationRoot(_identityVerificationHubV2, _scope)
+        Ownable(msg.sender)
+    {
+        // Initialize with empty configId - set it using tools.self.xyz
+    }
+
+    // Required: Override to provide configId for verification
+    function getConfigId(
+        bytes32 destinationChainId,
+        bytes32 userIdentifier, 
+        bytes memory userDefinedData // Custom data from QR code
+    ) public view override returns (bytes32) {
+        // Return your app's configuration ID
+        return configId;
     }
     
-    // Optional: Check if countries are excluded
-    function verifyWithCountryCheck(
-        SelfProof memory proof,
-        uint256[] memory excludedCountries
-    ) public {
-        verifySelfProof(proof);
+    // Set configuration ID (only owner)
+    function setConfigId(bytes32 _configId) external onlyOwner {
+        configId = _configId;
+    }
+
+    // Override to handle successful verification
+    function customVerificationHook(
+        ISelfVerificationRoot.GenericDiscloseOutputV2 memory output,
+        bytes memory userData
+    ) internal virtual override {
+        // Your custom business logic here
+        // Example: Store verified user data, mint NFT, transfer tokens, etc.
         
-        // Check country not in excluded list
-        for (uint i = 0; i < excludedCountries.length; i++) {
-            require(
-                proof.revealedData_packed[1] != excludedCountries[i], 
-                "Country not allowed"
-            );
-        }
+        // Store verification details for later use
+        verificationDetails[output.nullifier] = output;
         
-        // Continue with your logic...
+        // Mark user as verified
+        verifiedUsers[msg.sender] = true;
+        
+        // Emit event
+        emit UserVerified(
+            msg.sender,
+            output.nullifier,
+            output.attestationId,
+            output.userIdentifier
+        );
+        
+        // Access verified data:
+        // output.userIdentifier - user's unique identifier
+        // output.name - verified name
+        // output.nationality - verified nationality
+        // output.dateOfBirth - verified birth date
+        // output.olderThan - age verification result
+        // output.ofac - OFAC check results
+        
+        // Example: Simple verification check
+        require(bytes(output.nationality).length > 0, "Nationality required");
+    }
+    
+    // Check if user is verified
+    function isUserVerified(address user) public view returns (bool) {
+        return verifiedUsers[user];
+    }
+    
+    // Get verification details by nullifier
+    function getVerificationDetails(uint256 nullifier) 
+        public 
+        view 
+        returns (ISelfVerificationRoot.GenericDiscloseOutputV2 memory) 
+    {
+        return verificationDetails[nullifier];
     }
 }"""
     }
