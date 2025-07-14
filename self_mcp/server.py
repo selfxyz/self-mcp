@@ -14,6 +14,13 @@ from .tools import (
     generate_eu_id_verification
 )
 
+# Import dynamic documentation tools
+from .tools.dynamic_docs import (
+    fetch_self_docs,
+    list_docs_topics,
+    search_docs
+)
+
 # Import all resources
 from .resources import (
     get_contract_addresses,
@@ -79,6 +86,28 @@ mcp.tool(
         readOnlyHint=True
     )
 )(generate_eu_id_verification)
+
+# Register dynamic documentation tools
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Fetch latest Self protocol documentation from GitHub",
+        readOnlyHint=True
+    )
+)(fetch_self_docs)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="List all available documentation topics",
+        readOnlyHint=True
+    )
+)(list_docs_topics)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Search through Self protocol documentation",
+        readOnlyHint=True
+    )
+)(search_docs)
 
 # Register resources
 mcp.resource("self://contracts/addresses")(get_contract_addresses)
