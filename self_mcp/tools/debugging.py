@@ -1,12 +1,12 @@
 """Tool for debugging Self protocol verification errors"""
 
 from typing import Literal
-from ..templates import ERROR_SOLUTIONS
+from ..utils.github_client import get_docs_client
 
 
 async def debug_verification_error(
     error_message: str,
-    context: Literal["", "scope-mismatch", "proof-invalid", "age-verification", "nullifier-reuse", "network-error"] = ""
+    context: Literal["", "scope-mismatch", "proof-invalid", "age-verification", "nullifier-reuse", "network-error", "config-mismatch"] = ""
 ) -> str:
     """
     Diagnose Self verification errors and provide solutions.
@@ -18,80 +18,254 @@ async def debug_verification_error(
     Returns:
         Detailed explanation of the problem and how to fix it
     """
+    client = get_docs_client()
     error_lower = error_message.lower()
     
-    # Try to match error to known solutions
-    matched_solution = None
+    # Try to fetch troubleshooting docs
+    troubleshooting = await client.fetch_document("support/troubleshooting.md")
     
-    # Direct context match
+    if troubleshooting:
+        # Search for the error in docs
+        solution = find_error_solution(troubleshooting, error_message, context)
+        if solution:
+            return solution
+    
+    # Fallback to basic error analysis
+    return analyze_error_fallback(error_message, context)
+
+
+def find_error_solution(content: str, error_message: str, context: str) -> str:
+    """Find error solution in troubleshooting documentation"""
+    lines = content.split('\n')
+    error_lower = error_message.lower()
+    
+    # Keywords to search for based on error/context
+    search_terms = []
     if context:
-        context_map = {
-            "scope-mismatch": "scope",
-            "proof-invalid": "proof", 
-            "age-verification": "age",
-            "nullifier-reuse": "nullifier",
-            "network-error": "network"
-        }
-        if context in context_map:
-            matched_solution = ERROR_SOLUTIONS[context_map[context]]
+        search_terms.append(context.replace('-', ' '))
     
-    # If no context or no match, search error message
-    if not matched_solution:
-        for key, solution in ERROR_SOLUTIONS.items():
-            # Check main problem keywords
-            if key in error_lower:
-                matched_solution = solution
-                break
-            # Check related keywords
-            for related in solution.get("related", []):
-                if related.lower() in error_lower:
-                    matched_solution = solution
-                    break
-            if matched_solution:
-                break
+    # Extract keywords from error message
+    error_keywords = {
+        "scope": ["scope", "mismatch"],
+        "proof": ["proof", "invalid", "verification failed"],
+        "age": ["age", "older", "minimum age"],
+        "nullifier": ["nullifier", "reuse", "duplicate"],
+        "network": ["network", "connection", "timeout"],
+        "config": ["config", "mismatch", "configuration"]
+    }
     
-    # Build response
-    if matched_solution:
-        response = f"## Error: {matched_solution['problem']}\n\n"
-        response += f"**Your error:** `{error_message}`\n\n"
-        response += matched_solution['solution']
+    for key, keywords in error_keywords.items():
+        if any(kw in error_lower for kw in keywords):
+            search_terms.extend(keywords)
+    
+    # Find relevant sections
+    relevant_sections = []
+    current_section = []
+    section_relevance = 0
+    
+    for line in lines:
+        if line.startswith('#'):
+            # New section
+            if current_section and section_relevance > 0:
+                relevant_sections.append(('\n'.join(current_section), section_relevance))
+            current_section = [line]
+            section_relevance = sum(1 for term in search_terms if term in line.lower())
+        else:
+            current_section.append(line)
+            if any(term in line.lower() for term in search_terms):
+                section_relevance += 1
+    
+    # Add last section
+    if current_section and section_relevance > 0:
+        relevant_sections.append(('\n'.join(current_section), section_relevance))
+    
+    # Sort by relevance and return top section
+    if relevant_sections:
+        relevant_sections.sort(key=lambda x: x[1], reverse=True)
+        return f"# Error Analysis\n\nError: {error_message}\n\n{relevant_sections[0][0]}"
+    
+    return None
+
+
+def analyze_error_fallback(error_message: str, context: str) -> str:
+    """Provide basic error analysis when docs aren't available"""
+    error_lower = error_message.lower()
+    
+    # Common error patterns and solutions
+    if "scope" in error_lower or context == "scope-mismatch":
+        return """# Scope Mismatch Error
+
+**Problem**: The scope used in frontend doesn't match the backend scope.
+
+**Solution**:
+1. Ensure both frontend and backend use the exact same scope string
+2. Scope should be <= 25 characters, alphanumeric only
+3. Common pattern: "appname-environment" (e.g., "myapp-prod")
+
+**Example Fix**:
+```typescript
+// Frontend
+const selfApp = new SelfAppBuilder({
+  scope: "myapp-prod", // Must match backend exactly
+  ...
+}).build();
+
+// Backend
+const verifier = new SelfBackendVerifier(
+  "myapp-prod", // Same scope as frontend
+  ...
+);
+```"""
+    
+    elif "proof" in error_lower or "invalid" in error_lower or context == "proof-invalid":
+        return """# Invalid Proof Error
+
+**Problem**: The zero-knowledge proof verification failed.
+
+**Common Causes**:
+1. Proof expired (older than 30 minutes)
+2. Network mismatch (testnet proof on mainnet)
+3. Mock passport used in production
+4. Corrupted proof data during transmission
+
+**Solutions**:
+- Ensure proof is fresh (< 30 minutes old)
+- Match network environments
+- Use `isMock: false` for production
+- Check JSON parsing of proof data"""
+    
+    elif "age" in error_lower or context == "age-verification":
+        return """# Age Verification Error
+
+**Problem**: User doesn't meet age requirements.
+
+**Valid Age Range**: 10-100 years
+- Minimum: 10 years old
+- Maximum: 100 years old
+
+**Solution**:
+```typescript
+// Frontend disclosures
+disclosures: {
+  minimumAge: 18, // Must be between 10-100
+  ...
+}
+
+// Backend configuration
+async getConfig(configId) {
+  return {
+    olderThan: 18, // Must match frontend
+    ...
+  };
+}
+```"""
+    
+    elif "nullifier" in error_lower or context == "nullifier-reuse":
+        return """# Nullifier Reuse Error
+
+**Problem**: This proof has already been used.
+
+**Explanation**: Nullifiers prevent proof reuse. Each proof can only be used once per scope.
+
+**Solutions**:
+1. User needs to generate a new proof
+2. For testing, use different scopes
+3. Implement proper nullifier storage:
+
+```typescript
+// Store nullifiers to prevent reuse
+const usedNullifiers = new Set();
+
+function verifyProof(proof, nullifier) {
+  if (usedNullifiers.has(nullifier)) {
+    throw new Error("Proof already used");
+  }
+  // Verify proof...
+  usedNullifiers.add(nullifier);
+}
+```"""
+    
+    elif "network" in error_lower or "timeout" in error_lower or context == "network-error":
+        return """# Network/Connection Error
+
+**Problem**: Cannot connect to Self protocol services.
+
+**Common Causes**:
+1. Wrong RPC URL
+2. Network congestion
+3. Firewall blocking requests
+4. Invalid endpoint URL
+
+**Solutions**:
+- Use correct RPC URLs:
+  - Mainnet: https://forno.celo.org
+  - Testnet: https://alfajores-forno.celo-testnet.org
+- Ensure endpoint is publicly accessible
+- Check firewall/proxy settings
+- Add timeout handling"""
+    
+    elif "config" in error_lower or context == "config-mismatch":
+        return """# Configuration Mismatch Error
+
+**Problem**: Frontend and backend configurations don't match.
+
+**Requirements**: The following must match exactly:
+- `minimumAge` / `olderThan`
+- `excludedCountries`
+- `ofac` settings
+
+**Example Fix**:
+```typescript
+// Frontend
+disclosures: {
+  minimumAge: 18,
+  excludedCountries: ['IRN', 'PRK'],
+  ofac: true
+}
+
+// Backend IConfigStorage
+async getConfig(configId) {
+  return {
+    olderThan: 18,          // Must match minimumAge
+    excludedCountries: ['IRN', 'PRK'], // Must match exactly
+    ofac: true              // Must match
+  };
+}
+```"""
+    
     else:
-        # Generic debugging steps
-        response = f"## Debugging Self Verification Error\n\n"
-        response += f"**Your error:** `{error_message}`\n\n"
-        response += """
-This error isn't in our common issues database. Here's a general debugging approach:
+        return f"""# Error Analysis
 
-1. **Check Basic Setup:**
-   - Ensure @selfxyz/qrcode is installed on frontend
-   - Ensure @selfxyz/core is installed on backend
-   - Verify Celo RPC URL is accessible
+**Error Message**: {error_message}
 
-2. **Verify Configuration Match:**
-   - Frontend scope === Backend scope (exact match)
-   - Same disclosures requested and verified
+**General Debugging Steps**:
 
-3. **Inspect Network Traffic:**
-   - Check browser DevTools for request/response
-   - Ensure proof and publicSignals are sent
-   - Verify endpoint URL is correct
+1. **Check Console Logs**: Look for detailed error messages in browser and server logs
 
-4. **Enable Debug Logging:**
-   ```typescript
-   console.log('Proof:', proof);
-   console.log('PublicSignals:', publicSignals);
-   console.log('Verification result:', result);
-   ```
+2. **Verify Configuration**:
+   - Frontend and backend scopes match exactly
+   - All verification requirements align
+   - Network settings are correct
 
-5. **Common Issues to Check:**
-   - CORS configuration on backend
-   - JSON body parsing middleware
-   - Correct HTTP method (POST)
-   - Valid RPC connection to Celo
+3. **Test with Mock Passports**:
+   - Set `isMock: true` in development
+   - Use test passports to isolate issues
 
-If the issue persists, please check:
-- Self documentation: https://docs.self.xyz
-- GitHub issues: https://github.com/selfxyz/self/issues
-"""
-    
-    return response
+4. **Common Issues**:
+   - Expired proofs (> 30 minutes)
+   - Network mismatches
+   - Configuration differences
+   - CORS errors on endpoints
+
+5. **Get Help**:
+   - Check Self protocol documentation
+   - Join the Telegram community
+   - Review example implementations
+
+**Debug Checklist**:
+- [ ] Scopes match exactly (frontend/backend)
+- [ ] Using correct network (mainnet/testnet)
+- [ ] Proof is fresh (< 30 minutes)
+- [ ] Endpoint is publicly accessible
+- [ ] Configurations are aligned
+- [ ] Error logs checked on both sides"""
