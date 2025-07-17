@@ -10,33 +10,22 @@ TOPIC_MAP = {
     # Getting started
     "quickstart": "use-self/quickstart.md",
     "overview": "README.md",
-    
+    "disclosures": "use-self/disclosures.md",
+    "deeplinking": "use-self/use-deeplinking.md",
+    "mock-passports": "use-self/using-mock-passports.md",
+
     # SDK Reference
     "backend-sdk": "sdk-reference/selfbackendverifier.md",
     "frontend-sdk": "sdk-reference/selfqrcodewrapper.md",
     "self-app-builder": "sdk-reference/selfappbuilder.md",
-    "types": "sdk-reference/types.md",
-    
+
     # Contract Integration
     "contracts": "contract-integration/basic-integration.md",
-    "contract-quickstart": "contract-integration/contract-quickstart.md",
-    "hub-contract": "contract-integration/hub-contract.md",
-    
-    # Use Cases
-    "airdrop": "use-cases/airdrop.md",
-    "age-verification": "use-cases/age-verification.md",
-    "humanity-check": "use-cases/humanity-check.md",
-    
-    # Configuration
-    "configuration": "configuration/README.md",
-    "verification-config": "configuration/verification-configuration.md",
-    
-    # Testing
-    "testing": "testing/mock-passports.md",
-    
-    # Support
-    "faq": "support/faq.md",
-    "troubleshooting": "support/troubleshooting.md",
+    "deployed-contracts": "contract-integration/deployed-contracts.md",
+    "airdrop-example": "contract-integration/airdrop-example.md",
+    "happy-birthday-example": "contract-integration/happy-birthday-example.md",
+    "passport-attributes": "contract-integration/utilize-passport-attributes.md",
+    "frontend-configuration": "contract-integration/frontend-configuration.md",
 }
 
 
