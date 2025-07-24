@@ -21,6 +21,15 @@ from .tools.dynamic_docs import (
     search_docs
 )
 
+# Import contract interaction tools
+from .tools.contract_interaction import (
+    generate_scope_hash,
+    generate_config_id,
+    read_hub_config,
+    list_country_codes,
+    guide_to_tools
+)
+
 # Import all resources
 from .resources import (
     get_contract_addresses,
@@ -108,6 +117,42 @@ mcp.tool(
         readOnlyHint=True
     )
 )(search_docs)
+
+# Register contract interaction tools
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Generate scope hash for Self verification (like tools.self.xyz)",
+        readOnlyHint=True
+    )
+)(generate_scope_hash)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Generate a configuration ID for Self protocol verification",
+        readOnlyHint=True
+    )
+)(generate_config_id)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Read configuration from Self protocol Hub contract",
+        readOnlyHint=True
+    )
+)(read_hub_config)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Guide users to appropriate tools.self.xyz features",
+        readOnlyHint=True
+    )
+)(guide_to_tools)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="List available country codes for Self protocol exclusions",
+        readOnlyHint=True
+    )
+)(list_country_codes)
 
 # Register resources
 mcp.resource("self://contracts/addresses")(get_contract_addresses)
