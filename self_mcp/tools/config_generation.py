@@ -31,7 +31,8 @@ async def generate_verification_config(
     if requirements.get("exclude_countries"):
         countries = requirements["exclude_countries"]
         config["frontend"]["disclosures"]["excludedCountries"] = countries
-        config["backend"]["checks"].append(f"verifier.excludeCountries({', '.join(f'"{c}"' for c in countries)})")
+        escaped_countries = ', '.join(json.dumps(c) for c in countries)
+        config["backend"]["checks"].append(f"verifier.excludeCountries({escaped_countries})")
     
     if requirements.get("ofac_check"):
         config["frontend"]["disclosures"]["ofac"] = True
