@@ -14,6 +14,9 @@ from .tools import (
     generate_eu_id_verification
 )
 
+# Import playground example tool
+from .tools.code_generation import fetch_playground_example
+
 # Import dynamic documentation tools
 from .tools.dynamic_docs import (
     fetch_self_docs,
@@ -95,6 +98,13 @@ mcp.tool(
         readOnlyHint=True
     )
 )(generate_eu_id_verification)
+
+mcp.tool(
+    annotations=ToolAnnotations(
+        title="Fetch real-world playground examples for learning implementation patterns",
+        readOnlyHint=True
+    )
+)(fetch_playground_example)
 
 # Register dynamic documentation tools
 mcp.tool(

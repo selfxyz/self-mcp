@@ -5,6 +5,7 @@ MCP server for [Self protocol](https://self.xyz) integration assistance. Helps d
 ## Features
 
 - **Core Self Protocol Tools**: Integration guides, code generation, debugging assistance
+- **Playground Integration**: Real-world examples from [Self Playground](https://github.com/selfxyz/playground) repository
 - **Tools.self.xyz Integration**: Direct interaction with blockchain for reading configurations and generating hashes
 - **Web3 Integration**: Read-only blockchain operations (no write operations to keep it free)
 - **Comprehensive Documentation**: Resources and prompts for Self protocol development
@@ -150,30 +151,34 @@ Generate EU ID card verification code (V2).
 - **component**: `"frontend"` | `"backend"` | `"smart-contract"`
 - **language**: `"typescript"` | `"javascript"` | `"solidity"`
 
+#### 8. `fetch_playground_example`
+Fetch real-world playground examples for learning implementation patterns.
+- **example_type**: `"verify"` | `"save-options"` | `"verification-flow"` | `"frontend-component"` | `"app-structure"`
+
 ### Tools.self.xyz Integration Tools
 
-#### 8. `generate_scope_hash`
+#### 9. `generate_scope_hash`
 Generate a deterministic scope hash for an address/URL and seed.
 - **address_or_url**: The address or URL to hash
 - **scope_seed**: The seed value for scope generation
 
-#### 9. `generate_config_id`
+#### 10. `generate_config_id`
 Generate a config ID from verification requirements and check blockchain existence.
 - **minimum_age**: Optional minimum age requirement
 - **excluded_countries**: Optional list of excluded country codes
 - **ofac_enabled**: Optional list of OFAC check settings for each ID type
 - **network**: `"mainnet"` | `"testnet"`
 
-#### 10. `read_hub_config`
+#### 11. `read_hub_config`
 Read configuration details from the Hub contract.
 - **config_id**: The config ID to read
 - **network**: `"mainnet"` | `"testnet"`
 
-#### 11. `list_country_codes`
+#### 12. `list_country_codes`
 List available country codes for verification configuration.
 - **search**: Optional search term to filter countries
 
-#### 12. `guide_to_tools`
+#### 13. `guide_to_tools`
 Generate a link to tools.self.xyz with pre-filled parameters.
 - **action**: `"deploy-config"` | `"connect-wallet"` | `"select-countries"` | `"generate-scope"` | `"read-config"`
 - **parameters**: Optional dict with pre-fill values
@@ -185,7 +190,13 @@ User: "How do I integrate Self for age verification?"
 Assistant: [Provides step-by-step guide with code examples]
 
 User: "Generate backend verification code in TypeScript"
-Assistant: [Provides complete backend code with proper SDK setup]
+Assistant: [Provides complete backend code with proper SDK setup, now enhanced with playground patterns]
+
+User: "Show me a real-world verification implementation"
+Assistant: [Fetches actual playground verify.ts example with production patterns]
+
+User: "Show me the frontend playground component"
+Assistant: [Fetches Playground.tsx component with React patterns and styling]
 
 User: "Explain config storage setup"
 Assistant: [Shows IConfigStorage implementation examples]
