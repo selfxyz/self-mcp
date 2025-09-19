@@ -1,6 +1,7 @@
 """Tool for explaining Self protocol integration"""
 
 from typing import Literal
+
 from ..utils.github_client import get_docs_client
 
 

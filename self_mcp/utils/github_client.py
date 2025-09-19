@@ -1,9 +1,9 @@
 """GitHub API client for fetching Self protocol documentation"""
 
 import base64
-import asyncio
-from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+
 import httpx
 from pydantic import BaseModel
 
@@ -74,10 +74,24 @@ class GitHubDocsClient:
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 return None
+            # Log the error for debugging
+            print(f"HTTP error fetching {path}: {e.response.status_code} - {e.response.text}")
             raise
+        except httpx.TimeoutException as e:
+            print(f"Timeout fetching {path}: {e}")
+            # Return cached version if available, even if expired
+            if path in self.cache:
+                return self.cache[path].content
+            return None
+        except httpx.RequestError as e:
+            print(f"Request error fetching {path}: {e}")
+            # Return cached version if available, even if expired
+            if path in self.cache:
+                return self.cache[path].content
+            return None
         except Exception as e:
             # Log error but don't crash
-            print(f"Error fetching {path}: {e}")
+            print(f"Unexpected error fetching {path}: {e}")
             
             # Return cached version if available, even if expired
             if path in self.cache:

@@ -1,59 +1,43 @@
 """Tools for interacting with Self protocol smart contracts."""
 
 import json
-from typing import Optional, List, Dict, Any, Literal
+from typing import Any, Dict, List, Literal, Optional
+
+from eth_utils import is_address
 from pydantic import Field
 from web3 import Web3
-from eth_utils import is_address
-from ..utils.networks import CELO_NETWORKS
-from ..utils.constants_abi import HUB_CONTRACT_ABI
 
-# Country code mappings (ISO 3166-1 alpha-3)
-COUNTRY_CODES = {
-    "USA": "United States",
-    "GBR": "United Kingdom", 
-    "CAN": "Canada",
-    "AUS": "Australia",
-    "NZL": "New Zealand",
-    "IRN": "Iran",
-    "PRK": "North Korea",
-    "CUB": "Cuba",
-    "SYR": "Syria",
-    "RUS": "Russia",
-    "CHN": "China",
-    "IND": "India",
-    "JPN": "Japan",
-    "KOR": "South Korea",
-    "DEU": "Germany",
-    "FRA": "France",
-    "ITA": "Italy",
-    "ESP": "Spain",
-    "BRA": "Brazil",
-    "ARG": "Argentina",
-    "MEX": "Mexico",
-    # Add more as needed
-}
+from ..utils.constants import (
+    COUNTRY_CODES,
+    MAX_COUNTRIES_LENGTH,
+    BYTES_PER_UINT256,
+    COUNTRIES_PER_UINT256,
+    COUNTRY_CODE_LENGTH,
+    MIN_AGE,
+    MAX_AGE,
+    DEFAULT_OFAC_SETTINGS,
+)
+from ..utils.constants_abi import HUB_CONTRACT_ABI
+from ..utils.networks import CELO_NETWORKS
 
 
 def format_countries_list(countries: List[str]) -> List[int]:
     """Formats a list of 3-letter country codes into a list of integers for packing."""
-    MAX_LENGTH = 40
-    
-    if len(countries) > MAX_LENGTH:
-        raise ValueError(f"Maximum {MAX_LENGTH} countries allowed")
+    if len(countries) > MAX_COUNTRIES_LENGTH:
+        raise ValueError(f"Maximum {MAX_COUNTRIES_LENGTH} countries allowed")
     
     # Validate country codes
     for country in countries:
-        if len(country) != 3:
-            raise ValueError(f"Invalid country code: {country}. Must be 3 characters.")
+        if len(country) != COUNTRY_CODE_LENGTH:
+            raise ValueError(f"Invalid country code: {country}. Must be {COUNTRY_CODE_LENGTH} characters.")
     
-    # Pad the list to MAX_LENGTH
-    padded = countries + [''] * (MAX_LENGTH - len(countries))
+    # Pad the list to MAX_COUNTRIES_LENGTH
+    padded = countries + [''] * (MAX_COUNTRIES_LENGTH - len(countries))
     
     # Convert to bytes
     result = []
     for country in padded:
-        chars = country.ljust(3, '\0')
+        chars = country.ljust(COUNTRY_CODE_LENGTH, '\0')
         result.extend([ord(c) for c in chars])
     
     return result
@@ -63,20 +47,20 @@ def unpack_countries_from_config(packed_countries: List[int]) -> List[str]:
     """Unpacks the country list from the smart contract format."""
     countries = []
     
-    # Each uint256 contains up to 30 characters (10 countries)
+    # Each uint256 contains up to BYTES_PER_UINT256 characters (COUNTRIES_PER_UINT256 countries)
     for packed_value in packed_countries:
         # Convert the packed value to bytes
-        for i in range(10):  # 10 countries per uint256
-            # Extract 3 characters for each country
+        for i in range(COUNTRIES_PER_UINT256):
+            # Extract COUNTRY_CODE_LENGTH characters for each country
             country = ""
-            for j in range(3):
-                byte_index = i * 3 + j
+            for j in range(COUNTRY_CODE_LENGTH):
+                byte_index = i * COUNTRY_CODE_LENGTH + j
                 char_code = (packed_value >> (byte_index * 8)) & 0xFF
                 if char_code == 0:
                     break
                 country += chr(char_code)
             
-            if country and country != '\0\0\0':
+            if country and country != '\0' * COUNTRY_CODE_LENGTH:
                 countries.append(country)
     
     return countries
@@ -85,7 +69,7 @@ def unpack_countries_from_config(packed_countries: List[int]) -> List[str]:
 async def generate_scope_hash(
     address_or_url: str = Field(description="Ethereum address (0x...) or HTTPS URL"),
     scope_seed: str = Field(description="Scope seed string (max 20 chars, lowercase)")
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """
     Generate a scope hash for Self verification, replicating hashEndpointWithScope.
     
@@ -146,9 +130,9 @@ async def generate_scope_hash(
 
 
 async def generate_config_id(
-    minimum_age: Optional[int] = Field(default=0, description="Minimum age requirement (0 to disable)"),
-    excluded_countries: Optional[List[str]] = Field(default=[], description="List of excluded 3-letter country codes"),
-    ofac_enabled: Optional[List[bool]] = Field(default=[False, False, False], description="OFAC settings [basic, enhanced, comprehensive]"),
+    minimum_age: int = Field(default=0, description="Minimum age requirement (0 to disable)"),
+    excluded_countries: List[str] = Field(default_factory=list, description="List of excluded 3-letter country codes"),
+    ofac_enabled: List[bool] = Field(default_factory=lambda: DEFAULT_OFAC_SETTINGS.copy(), description="OFAC settings [basic, enhanced, comprehensive]"),
     network: Literal["mainnet", "testnet"] = Field(default="mainnet", description="Network to check config existence")
 ) -> Dict[str, Any]:
     """
@@ -157,11 +141,11 @@ async def generate_config_id(
     This replicates the generateConfigId function from the smart contract.
     """
     # Validate inputs
-    if minimum_age < 0 or minimum_age > 150:
-        return {"error": "Minimum age must be between 0 and 150"}
+    if minimum_age < MIN_AGE or minimum_age > MAX_AGE:
+        return {"error": f"Minimum age must be between {MIN_AGE} and {MAX_AGE}"}
     
-    if len(ofac_enabled) != 3:
-        ofac_enabled = [False, False, False]
+    if len(ofac_enabled) != len(DEFAULT_OFAC_SETTINGS):
+        ofac_enabled = DEFAULT_OFAC_SETTINGS
     
     # Create the config struct matching Solidity
     config = {
@@ -179,8 +163,8 @@ async def generate_config_id(
             # Pack into four uint256 values
             for i in range(4):
                 packed_value = 0
-                for j in range(30):  # 30 bytes per uint256
-                    byte_index = i * 30 + j
+                for j in range(BYTES_PER_UINT256):
+                    byte_index = i * BYTES_PER_UINT256 + j
                     if byte_index < len(country_bytes):
                         packed_value |= country_bytes[byte_index] << (j * 8)
                 config["forbiddenCountriesListPacked"][i] = packed_value
@@ -322,9 +306,21 @@ async def read_hub_config(
             "explorer_url": f"{CELO_NETWORKS[network]['explorer']}/address/{hub_address}"
         }
         
+    except ValueError as e:
+        return {
+            "error": f"Invalid input: {str(e)}",
+            "config_id": config_id,
+            "network": network
+        }
+    except ConnectionError as e:
+        return {
+            "error": f"Network connection error: {str(e)}",
+            "config_id": config_id,
+            "network": network
+        }
     except Exception as e:
         return {
-            "error": f"Error reading config: {str(e)}",
+            "error": f"Unexpected error reading config: {str(e)}",
             "config_id": config_id,
             "network": network
         }
@@ -338,187 +334,10 @@ async def list_country_codes(
     
     Returns ISO 3166-1 alpha-3 country codes with their names.
     """
-    # Extended country list
-    all_countries = {
-        **COUNTRY_CODES,
-        "AFG": "Afghanistan",
-        "ALB": "Albania",
-        "DZA": "Algeria",
-        "AND": "Andorra",
-        "AGO": "Angola",
-        "ATG": "Antigua and Barbuda",
-        "ARM": "Armenia",
-        "AUT": "Austria",
-        "AZE": "Azerbaijan",
-        "BHS": "Bahamas",
-        "BHR": "Bahrain",
-        "BGD": "Bangladesh",
-        "BRB": "Barbados",
-        "BLR": "Belarus",
-        "BEL": "Belgium",
-        "BLZ": "Belize",
-        "BEN": "Benin",
-        "BTN": "Bhutan",
-        "BOL": "Bolivia",
-        "BIH": "Bosnia and Herzegovina",
-        "BWA": "Botswana",
-        "BRN": "Brunei",
-        "BGR": "Bulgaria",
-        "BFA": "Burkina Faso",
-        "BDI": "Burundi",
-        "CPV": "Cabo Verde",
-        "KHM": "Cambodia",
-        "CMR": "Cameroon",
-        "CAF": "Central African Republic",
-        "TCD": "Chad",
-        "CHL": "Chile",
-        "COL": "Colombia",
-        "COM": "Comoros",
-        "COG": "Congo",
-        "CRI": "Costa Rica",
-        "HRV": "Croatia",
-        "CYP": "Cyprus",
-        "CZE": "Czech Republic",
-        "DNK": "Denmark",
-        "DJI": "Djibouti",
-        "DMA": "Dominica",
-        "DOM": "Dominican Republic",
-        "ECU": "Ecuador",
-        "EGY": "Egypt",
-        "SLV": "El Salvador",
-        "GNQ": "Equatorial Guinea",
-        "ERI": "Eritrea",
-        "EST": "Estonia",
-        "SWZ": "Eswatini",
-        "ETH": "Ethiopia",
-        "FJI": "Fiji",
-        "FIN": "Finland",
-        "GAB": "Gabon",
-        "GMB": "Gambia",
-        "GEO": "Georgia",
-        "GHA": "Ghana",
-        "GRC": "Greece",
-        "GRD": "Grenada",
-        "GTM": "Guatemala",
-        "GIN": "Guinea",
-        "GNB": "Guinea-Bissau",
-        "GUY": "Guyana",
-        "HTI": "Haiti",
-        "HND": "Honduras",
-        "HUN": "Hungary",
-        "ISL": "Iceland",
-        "IDN": "Indonesia",
-        "IRQ": "Iraq",
-        "IRL": "Ireland",
-        "ISR": "Israel",
-        "JAM": "Jamaica",
-        "JOR": "Jordan",
-        "KAZ": "Kazakhstan",
-        "KEN": "Kenya",
-        "KIR": "Kiribati",
-        "KWT": "Kuwait",
-        "KGZ": "Kyrgyzstan",
-        "LAO": "Laos",
-        "LVA": "Latvia",
-        "LBN": "Lebanon",
-        "LSO": "Lesotho",
-        "LBR": "Liberia",
-        "LBY": "Libya",
-        "LIE": "Liechtenstein",
-        "LTU": "Lithuania",
-        "LUX": "Luxembourg",
-        "MDG": "Madagascar",
-        "MWI": "Malawi",
-        "MYS": "Malaysia",
-        "MDV": "Maldives",
-        "MLI": "Mali",
-        "MLT": "Malta",
-        "MHL": "Marshall Islands",
-        "MRT": "Mauritania",
-        "MUS": "Mauritius",
-        "FSM": "Micronesia",
-        "MDA": "Moldova",
-        "MCO": "Monaco",
-        "MNG": "Mongolia",
-        "MNE": "Montenegro",
-        "MAR": "Morocco",
-        "MOZ": "Mozambique",
-        "MMR": "Myanmar",
-        "NAM": "Namibia",
-        "NRU": "Nauru",
-        "NPL": "Nepal",
-        "NLD": "Netherlands",
-        "NIC": "Nicaragua",
-        "NER": "Niger",
-        "NGA": "Nigeria",
-        "MKD": "North Macedonia",
-        "NOR": "Norway",
-        "OMN": "Oman",
-        "PAK": "Pakistan",
-        "PLW": "Palau",
-        "PSE": "Palestine",
-        "PAN": "Panama",
-        "PNG": "Papua New Guinea",
-        "PRY": "Paraguay",
-        "PER": "Peru",
-        "PHL": "Philippines",
-        "POL": "Poland",
-        "PRT": "Portugal",
-        "QAT": "Qatar",
-        "ROU": "Romania",
-        "RWA": "Rwanda",
-        "KNA": "Saint Kitts and Nevis",
-        "LCA": "Saint Lucia",
-        "VCT": "Saint Vincent and the Grenadines",
-        "WSM": "Samoa",
-        "SMR": "San Marino",
-        "STP": "Sao Tome and Principe",
-        "SAU": "Saudi Arabia",
-        "SEN": "Senegal",
-        "SRB": "Serbia",
-        "SYC": "Seychelles",
-        "SLE": "Sierra Leone",
-        "SGP": "Singapore",
-        "SVK": "Slovakia",
-        "SVN": "Slovenia",
-        "SLB": "Solomon Islands",
-        "SOM": "Somalia",
-        "ZAF": "South Africa",
-        "SSD": "South Sudan",
-        "LKA": "Sri Lanka",
-        "SDN": "Sudan",
-        "SUR": "Suriname",
-        "SWE": "Sweden",
-        "CHE": "Switzerland",
-        "TWN": "Taiwan",
-        "TJK": "Tajikistan",
-        "TZA": "Tanzania",
-        "THA": "Thailand",
-        "TLS": "Timor-Leste",
-        "TGO": "Togo",
-        "TON": "Tonga",
-        "TTO": "Trinidad and Tobago",
-        "TUN": "Tunisia",
-        "TUR": "Turkey",
-        "TKM": "Turkmenistan",
-        "TUV": "Tuvalu",
-        "UGA": "Uganda",
-        "UKR": "Ukraine",
-        "ARE": "United Arab Emirates",
-        "URY": "Uruguay",
-        "UZB": "Uzbekistan",
-        "VUT": "Vanuatu",
-        "VAT": "Vatican City",
-        "VEN": "Venezuela",
-        "VNM": "Vietnam",
-        "YEM": "Yemen",
-        "ZMB": "Zambia",
-        "ZWE": "Zimbabwe"
-    }
     
     # Filter results if search term provided
     results = []
-    for code, name in sorted(all_countries.items()):
+    for code, name in sorted(COUNTRY_CODES.items()):
         if search:
             search_lower = search.lower()
             if search_lower in code.lower() or search_lower in name.lower():

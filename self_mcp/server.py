@@ -3,7 +3,7 @@
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-# Import all tools
+# Core tools
 from .tools import (
     explain_self_integration,
     generate_verification_code,
@@ -11,39 +11,35 @@ from .tools import (
     check_self_status,
     generate_verification_config,
     explain_sdk_setup,
-    generate_eu_id_verification
+    generate_eu_id_verification,
 )
 
-# Import playground example tool
-from .tools.code_generation import fetch_playground_example
-
-# Import dynamic documentation tools
+# Documentation tools
 from .tools.dynamic_docs import (
     fetch_self_docs,
     list_docs_topics,
-    search_docs
+    search_docs,
 )
 
-# Import contract interaction tools
+# Contract interaction tools
 from .tools.contract_interaction import (
     generate_scope_hash,
     generate_config_id,
     read_hub_config,
     list_country_codes,
-    guide_to_tools
+    guide_to_tools,
 )
 
-# Import all resources
+# Resources and prompts
 from .resources import (
     get_contract_addresses,
     get_example_code,
-    get_best_practices
+    get_best_practices,
 )
 
-# Import all prompts
 from .prompts import (
     design_verification_flow,
-    troubleshoot_integration
+    troubleshoot_integration,
 )
 
 # Create an MCP server
@@ -98,13 +94,6 @@ mcp.tool(
         readOnlyHint=True
     )
 )(generate_eu_id_verification)
-
-mcp.tool(
-    annotations=ToolAnnotations(
-        title="Fetch real-world playground examples for learning implementation patterns",
-        readOnlyHint=True
-    )
-)(fetch_playground_example)
 
 # Register dynamic documentation tools
 mcp.tool(

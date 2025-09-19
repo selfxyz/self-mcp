@@ -1,12 +1,16 @@
 """Tool for debugging Self protocol verification errors"""
 
-from typing import Literal
+from typing import Literal, Optional
+
 from ..utils.github_client import get_docs_client
 
 
 async def debug_verification_error(
     error_message: str,
-    context: Literal["", "scope-mismatch", "proof-invalid", "age-verification", "nullifier-reuse", "network-error", "config-mismatch"] = ""
+    context: Literal[
+        "", "scope-mismatch", "proof-invalid", "age-verification", 
+        "nullifier-reuse", "network-error", "config-mismatch"
+    ] = "",
 ) -> str:
     """
     Diagnose Self verification errors and provide solutions.

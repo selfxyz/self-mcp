@@ -1,6 +1,7 @@
 """Tool for checking Self protocol status"""
 
 from typing import Literal
+
 from ..utils.networks import CELO_NETWORKS
 
 

@@ -1,7 +1,9 @@
 """Dynamic documentation fetching from Self protocol GitHub repository"""
 
-from typing import Optional, Dict, Annotated
+from typing import Annotated, Dict, Optional
+
 from pydantic import Field
+
 from ..utils.github_client import get_docs_client
 
 

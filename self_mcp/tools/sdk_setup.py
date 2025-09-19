@@ -1,12 +1,13 @@
 """Tool for explaining Self SDK setup requirements"""
 
-from typing import Literal
+from typing import Literal, Optional
+
 from fastmcp import Context
 
 
 async def explain_sdk_setup(
     topic: Literal["config-storage", "user-id-type", "attestation-ids", "full-setup"],
-    ctx: Context = None
+    ctx: Optional[Context] = None,
 ) -> str:
     """
     Explain Self SDK backend setup requirements and configuration.

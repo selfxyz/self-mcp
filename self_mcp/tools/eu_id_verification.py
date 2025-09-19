@@ -1,13 +1,14 @@
 """Tool for EU ID Card verification support"""
 
-from typing import Literal
+from typing import Literal, Optional
+
 from fastmcp import Context
 
 
 async def generate_eu_id_verification(
     component: Literal["frontend", "backend", "smart-contract"],
     language: Literal["typescript", "javascript", "solidity"] = "typescript",
-    ctx: Context = None
+    ctx: Optional[Context] = None,
 ) -> str:
     """
     Generate code for EU ID card verification (Self V2 feature).

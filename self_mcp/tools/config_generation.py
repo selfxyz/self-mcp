@@ -1,7 +1,7 @@
 """Tool for generating Self protocol verification configurations"""
 
-from typing import Dict, Any
 import json
+from typing import Any, Dict
 
 
 async def generate_verification_config(
