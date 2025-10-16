@@ -37,7 +37,6 @@ venv\Scripts\activate
 
 3. **Install dependencies**:
 ```bash
-cd self-mcp
 pip install -e .
 ```
 
