@@ -1,0 +1,44 @@
+{
+  "name": "@selfxyz/self-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Self Protocol — identity verification SDK, contracts, and integration guidance",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "self-mcp": "dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "ethers": "^6.16.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/selfxyz/self-mcp.git"
+  },
+  "author": "Self Protocol",
+  "keywords": [
+    "mcp", "self-protocol", "identity-verification", "zk-proofs",
+    "passport", "model-context-protocol", "claude", "cursor", "celo"
+  ]
+}
