@@ -10,7 +10,7 @@ const DOCUMENTS = `# Self Protocol — Supported Documents & Disclosure Attribut
 | 1             | E_PASSPORT  | Electronic passports with NFC chip (ICAO 9303)   |
 | 2             | EU_ID_CARD  | EU biometric ID cards with NFC chip              |
 | 3             | AADHAAR     | Indian Aadhaar cards                             |
-| 4             | KYC         | KYC via SumSub (African markets initially)       |
+| 4             | KYC         | KYC via Didit (supports many additional ID types)       |
 
 ## Supported Countries
 
@@ -38,7 +38,7 @@ These attributes can be selectively disclosed when using the \`vc_and_disclose\`
 
 ## KYC Fields (attestationId 4)
 
-KYC verification uses SumSub and supports the following fields:
+KYC verification uses Didit and supports the following fields:
 
 | Field         | Description               |
 |---------------|---------------------------|

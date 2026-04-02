@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerConfig } from "../config.js";
 
-const SDK_KMP = `# @selfxyz/kmp-sdk v0.0.1-alpha — Kotlin Multiplatform SDK
+const SDK_KMP = `# @selfxyz/kmp-sdk v0.1.0 — Kotlin Multiplatform SDK
 
 ## Overview
 

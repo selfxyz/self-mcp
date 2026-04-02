@@ -5,23 +5,27 @@ const OVERVIEW = `# Self Protocol — Overview
 
 ## What is Self?
 
-Self is an identity verification protocol that combines passport NFC chip reading with zero-knowledge proofs on the Celo blockchain. It enables privacy-preserving identity verification: users prove facts about themselves (age, nationality, sanctions status) without revealing the underlying personal data.
+Self is a privacy-preserving identity protocol on the Celo blockchain with three products:
 
-## Verification Flow
+- **Self Pass** — Identity verification using zero-knowledge proofs. Users scan passports, biometric ID cards, Aadhaar, or complete KYC, then prove facts about themselves (age, nationality, sanctions status) to any dApp without revealing personal data.
+- **Self Connect** — Identifier-to-address mapping protocol. Maps phone numbers, emails, Twitter handles, and other identifiers to blockchain addresses using a federated attestation model with ODIS for privacy. Drives the majority of Self's user base via MiniPay integration. See \`self://connect\` for full details.
+- **Self Agent ID** — On-chain identity registry (ERC-8004) for AI agents to prove they are backed by a real, passport-verified human. See the self-agent-id MCP server.
 
-1. **NFC Scan** — The user scans their passport or national ID card using the NFC reader on their mobile device. The app extracts the Machine Readable Zone (MRZ) data and ICAO data groups (DG1 for MRZ info, DG2 for photo, etc.) from the chip.
-2. **ZK Proof Generation** — The app generates a Groth16 zero-knowledge proof locally on the device. This proof attests to specific claims (e.g. "user is over 18", "user is not on OFAC list") without revealing the raw passport data.
+## Self Pass — Verification Flow
+
+1. **Document Scan** — The user scans their passport or ID card via NFC, Aadhaar via QR/PDF, or completes KYC via Didit. The app extracts document data on-device.
+2. **ZK Proof Generation** — The app generates a Groth16 zero-knowledge proof locally on the device inside a TEE. This proof attests to specific claims (e.g. "user is over 18", "user is not on OFAC list") without revealing the raw document data.
 3. **On-Chain Verification** — The proof is submitted to the IdentityVerificationHub V2 smart contract on Celo. The hub delegates to the appropriate circuit verifier, validates the proof, and stores a commitment in the relevant identity registry.
 4. **Result** — The verifier contract (or off-chain SDK) can now confirm the user's claims. The user's personal data never leaves their device.
 
-## Supported Document Types
+## Supported Document Types (Self Pass)
 
 | attestationId | Document Type         |
 |---------------|-----------------------|
 | 1             | E-Passport            |
-| 2             | EU ID Card            |
+| 2             | EU Biometric ID Card  |
 | 3             | Aadhaar (India)       |
-| 4             | KYC via SumSub        |
+| 4             | KYC (via Didit)       |
 
 ## Key On-Chain Components
 

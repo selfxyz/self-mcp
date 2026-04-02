@@ -103,7 +103,7 @@ Use @selfxyz/core SelfBackendVerifier (see self_verify_proof_backend prompt).`,
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("xyz.self.sdk:kmp-sdk:0.0.1-alpha")
+    implementation("xyz.self.sdk:kmp-sdk:0.1.0")
 }
 \`\`\`
 

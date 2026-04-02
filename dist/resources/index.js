@@ -10,6 +10,7 @@ import { registerSdkMobile } from "./sdk-mobile.js";
 import { registerSdkBridge } from "./sdk-bridge.js";
 import { registerSdkKmp } from "./sdk-kmp.js";
 import { registerSdkCommon } from "./sdk-common.js";
+import { registerSelfConnect } from "./self-connect.js";
 export function registerResources(server, config) {
     registerOverview(server, config);
     registerContracts(server, config);
@@ -18,6 +19,7 @@ export function registerResources(server, config) {
     registerDocuments(server, config);
     registerCircuits(server, config);
     registerCrossReference(server, config);
+    registerSelfConnect(server, config);
     registerSdkRn(server, config);
     registerSdkMobile(server, config);
     registerSdkBridge(server, config);
