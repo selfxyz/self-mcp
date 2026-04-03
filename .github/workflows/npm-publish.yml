@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-      - feat/typescript-rewrite-v2
     paths:
       - "package.json"
+      - "src/**"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -16,7 +16,6 @@ on:
         default: false
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -53,6 +52,7 @@ jobs:
         if: steps.check_version.outputs.already_published != 'true'
         id: publish
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
         run: |
           DRY_RUN=""
@@ -64,7 +64,7 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then
             TAG="--tag beta"
           fi
-          npx npm@latest publish --access public $TAG $DRY_RUN
+          npm publish --access public $TAG $DRY_RUN
 
       - name: Publish result
         if: always()
@@ -76,5 +76,5 @@ jobs:
           elif [ "$PUBLISH_OUTCOME" = "skipped" ]; then
             echo "::warning::Publish skipped (already published or check failed)"
           else
-            echo "::warning::NPM publish failed. Check OIDC trusted publisher settings on npmjs.com."
+            echo "::warning::NPM publish failed. Check NPM_TOKEN secret in repo settings."
           fi
