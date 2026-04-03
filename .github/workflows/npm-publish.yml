@@ -1,0 +1,80 @@
+name: NPM Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "src/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run publish with --dry-run"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Check version not already published
+        id: check_version
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version 2>/dev/null; then
+            echo "::warning::Version $VERSION of $NAME is already published on npm."
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.check_version.outputs.already_published != 'true'
+        id: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
+        run: |
+          DRY_RUN=""
+          if [ "$DRY_RUN_INPUT" = "true" ]; then
+            DRY_RUN="--dry-run"
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          TAG=""
+          if [[ "$VERSION" == *-* ]]; then
+            TAG="--tag beta"
+          fi
+          npm publish --access public $TAG $DRY_RUN
+
+      - name: Publish result
+        if: always()
+        env:
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+        run: |
+          if [ "$PUBLISH_OUTCOME" = "success" ]; then
+            echo "✅ @selfxyz/self-mcp published successfully"
+          elif [ "$PUBLISH_OUTCOME" = "skipped" ]; then
+            echo "::warning::Publish skipped (already published or check failed)"
+          else
+            echo "::warning::NPM publish failed. Check NPM_TOKEN secret in repo settings."
+          fi
