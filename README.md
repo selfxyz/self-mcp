@@ -49,7 +49,7 @@ self-mcp
 | `self://sdk/common` | `@selfxyz/common` — shared utilities, types, `SelfAppBuilder` |
 | `self://documents` | Supported document types, countries, disclosure attributes |
 | `self://circuits` | ZK circuit types, signature algorithms, proof structure |
-| `self://cross-reference` | Relationship to self-agent-id MCP, ERC-8004 agent identity |
+| `self://cross-reference` | When to use the Self Agent ID MCP vs this one; Agent ID quick reference |
 
 ## Tools
 
@@ -76,7 +76,7 @@ self-mcp
 
 ## Related
 
-- **[self-agent-id-mcp](https://github.com/selfxyz/self-agent-id-mcp)** — MCP server for AI agent identity (ERC-8004 proof-of-human registration, authentication, verification)
+- **[Self Agent ID MCP](https://docs.self.xyz/docs/agent-id/guides/mcp-user/)**: MCP server for AI agent identity (ERC-8004 proof-of-human registration, signed requests, verification). Hosted at `https://agent-api.self.xyz/api/mcp`, or run the npm stdio package [`@selfxyz/mcp-server`](https://github.com/selfxyz/self-agent-id-mcp)
 - **[Self Protocol](https://self.xyz)** — Identity verification using passport NFC + zero-knowledge proofs
 - **[Self on Celo](https://celoscan.io/address/0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF)** — IdentityVerificationHub on mainnet
 

@@ -9,7 +9,7 @@ Self is a privacy-preserving identity protocol on the Celo blockchain with three
 
 - **Self Pass** — Identity verification using zero-knowledge proofs. Users scan passports, biometric ID cards, Aadhaar, or complete KYC, then prove facts about themselves (age, nationality, sanctions status) to any dApp without revealing personal data.
 - **Self Connect** — Identifier-to-address mapping protocol. Maps phone numbers, emails, Twitter handles, and other identifiers to blockchain addresses using a federated attestation model with ODIS for privacy. Drives the majority of Self's user base via MiniPay integration. See \`self://connect\` for full details.
-- **Self Agent ID** — On-chain identity registry (ERC-8004) for AI agents to prove they are backed by a real, passport-verified human. See the self-agent-id MCP server.
+- **Self Agent ID**: On-chain identity registry (ERC-8004) on Celo where AI agents prove they are backed by a real human verified with Self. See \`self://cross-reference\` and the Self Agent ID MCP.
 
 ## Self Pass — Verification Flow
 
@@ -67,7 +67,7 @@ When configuring a verification request, you can require disclosure of any combi
 
 ## Related: AI Agent Identity
 
-For AI agent identity registration with proof-of-human verification (ERC-8004), see the self-agent-id MCP server. The SelfAgentRegistry contract uses Self's passport verification as a soulbound proof-of-human mechanism for agent NFTs.
+For AI agent identity (ERC-8004 registration with proof-of-human, signed agent requests, agent verification), use the Self Agent ID MCP: hosted at \`https://agent-api.self.xyz/api/mcp\` or the npm stdio package \`@selfxyz/mcp-server\`. TypeScript projects use \`@selfxyz/agent-sdk\`; other languages use the REST API at https://agent-api.self.xyz. Docs: https://docs.self.xyz/docs/agent-id/overview/
 `;
 
 export function registerOverview(
